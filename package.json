@@ -1,0 +1,22 @@
+{
+  "name": "nursenest",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "db:generate": "pnpm --filter @nursenest/db generate",
+    "db:migrate": "pnpm --filter @nursenest/db migrate",
+    "db:push": "pnpm --filter @nursenest/db push",
+    "db:seed": "pnpm --filter @nursenest/db seed",
+    "db:studio": "pnpm --filter @nursenest/db studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  }
+}

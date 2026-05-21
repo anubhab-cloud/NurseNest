@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: nursenest
+      POSTGRES_PASSWORD: nursenest
+      POSTGRES_DB: nursenest
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nursenest"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://nursenest:nursenest@postgres:5432/nursenest
+      REDIS_URL: redis://redis:6379
+      PORT: 3001
+      HOST: 0.0.0.0
+      WEB_ORIGIN: http://localhost:3000
+      JWT_ACCESS_SECRET: dev-access-secret-change-in-production-32
+      JWT_REFRESH_SECRET: dev-refresh-secret-change-in-production-32
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+      NEXT_PUBLIC_SOCKET_URL: http://localhost:3001
+      INTERNAL_API_URL: http://api:3001
+      AUTH_SECRET: dev-auth-secret-change-in-production-32chars
+      AUTH_URL: http://localhost:3000
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

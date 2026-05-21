@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PATIENT
+  NURSE
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  phone        String?
+  passwordHash String
+  role         Role
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  patientProfile PatientProfile?
+  nurseProfile   NurseProfile?
+  notifications  Notification[]
+
+  @@index([role])
+  @@index([email])
+}
+
+model PatientProfile {
+  userId           String   @id
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName         String
+  dateOfBirth      DateTime
+  bloodGroup       String?
+  allergies        String[] @default([])
+  emergencyContact String?
+  address          String?
+  lat              Float?
+  lng              Float?
+
+  bookings Booking[]     @relation("PatientBookings")
+  vitals   VitalRecord[]
+  reviews  Review[]
+}
+
+model NurseProfile {
+  userId              String   @id
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName            String
+  certificationNumber String
+  specializations     String[] @default([])
+  yearsExp            Int      @default(0)
+  rating              Float    @default(0)
+  totalVisits         Int      @default(0)
+  isAvailable         Boolean  @default(true)
+  currentLat          Float?
+  currentLng          Float?
+
+  bookings   Booking[]   @relation("NurseBookings")
+  vitals     VitalRecord[]
+  visitNotes VisitNote[]
+  reviews    Review[]
+}
+
+model Service {
+  id              String   @id @default(cuid())
+  name            String
+  description     String
+  pricePerVisit   Int
+  durationMinutes Int
+  category        String
+  createdAt       DateTime @default(now())
+
+  bookings Booking[]
+}
+
+model Booking {
+  id          String         @id @default(cuid())
+  patientId   String
+  patient     PatientProfile @relation("PatientBookings", fields: [patientId], references: [userId])
+  nurseId     String?
+  nurse       NurseProfile?  @relation("NurseBookings", fields: [nurseId], references: [userId])
+  serviceId   String
+  service     Service        @relation(fields: [serviceId], references: [id])
+  scheduledAt DateTime
+  status      BookingStatus  @default(PENDING)
+  notes       String?
+  totalAmount Int
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  visitNotes VisitNote?
+  review     Review?
+  invoice    Invoice?
+
+  @@index([patientId])
+  @@index([nurseId])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+model VitalRecord {
+  id          String         @id @default(cuid())
+  patientId   String
+  patient     PatientProfile @relation(fields: [patientId], references: [userId])
+  nurseId     String
+  nurse       NurseProfile   @relation(fields: [nurseId], references: [userId])
+  heartRate   Int
+  systolic    Int
+  diastolic   Int
+  spo2        Int
+  temperature Float
+  recordedAt  DateTime       @default(now())
+
+  @@index([patientId, recordedAt])
+}
+
+model VisitNote {
+  id             String       @id @default(cuid())
+  bookingId      String       @unique
+  booking        Booking      @relation(fields: [bookingId], references: [id])
+  nurseId        String
+  nurse          NurseProfile @relation(fields: [nurseId], references: [userId])
+  observations   String
+  medications    String?
+  nextVisitDate  DateTime?
+  attachmentUrls String[]     @default([])
+  createdAt      DateTime     @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  type      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+}
+
+model Review {
+  id        String         @id @default(cuid())
+  patientId String
+  patient   PatientProfile @relation(fields: [patientId], references: [userId])
+  nurseId   String
+  nurse     NurseProfile   @relation(fields: [nurseId], references: [userId])
+  bookingId String         @unique
+  booking   Booking        @relation(fields: [bookingId], references: [id])
+  rating    Int
+  comment   String?
+  createdAt DateTime       @default(now())
+
+  @@index([nurseId])
+}
+
+model Invoice {
+  id              String        @id @default(cuid())
+  bookingId       String        @unique
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+  amount          Int
+  status          InvoiceStatus @default(PENDING)
+  razorpayOrderId String?
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@nursenest/utils",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.24.1",
+    "@aws-sdk/client-s3": "^3.709.0",
+    "@aws-sdk/s3-request-presigner": "^3.709.0",
+    "razorpay": "^2.9.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
