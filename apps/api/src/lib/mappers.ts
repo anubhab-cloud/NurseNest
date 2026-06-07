@@ -39,7 +39,7 @@ export function toPatientProfile(p: PatientProfile): PatientProfileDto {
     fullName: p.fullName,
     dateOfBirth: p.dateOfBirth.toISOString(),
     bloodGroup: p.bloodGroup,
-    allergies: p.allergies,
+    allergies: p.allergies ? p.allergies.split(',').filter(Boolean) : [],
     emergencyContact: p.emergencyContact,
     address: p.address,
     lat: p.lat,
@@ -52,7 +52,7 @@ export function toNurseProfile(n: NurseProfile): NurseProfileDto {
     userId: n.userId,
     fullName: n.fullName,
     certificationNumber: n.certificationNumber,
-    specializations: n.specializations,
+    specializations: n.specializations ? n.specializations.split(',').filter(Boolean) : [],
     yearsExp: n.yearsExp,
     rating: n.rating,
     totalVisits: n.totalVisits,
@@ -115,7 +115,7 @@ export function toVisitNote(n: VisitNote): VisitNoteDto {
     observations: n.observations,
     medications: n.medications,
     nextVisitDate: n.nextVisitDate?.toISOString() ?? null,
-    attachmentUrls: n.attachmentUrls,
+    attachmentUrls: n.attachmentUrls ? n.attachmentUrls.split(',').filter(Boolean) : [],
     createdAt: n.createdAt.toISOString(),
   };
 }

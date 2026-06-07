@@ -30,7 +30,7 @@ async function main() {
           fullName: "Ramesh Kumar",
           dateOfBirth: new Date("1958-03-15"),
           bloodGroup: "B+",
-          allergies: ["Penicillin"],
+          allergies: "Penicillin",
           emergencyContact: "+919800000099",
           address: "12 MG Road, Bengaluru",
           lat: 12.9716,
@@ -53,7 +53,7 @@ async function main() {
         create: {
           fullName: "Priya Sharma",
           certificationNumber: "KN-2019-4521",
-          specializations: ["Geriatric Care", "Post-Surgery Recovery"],
+          specializations: "Geriatric Care,Post-Surgery Recovery",
           yearsExp: 8,
           rating: 4.8,
           totalVisits: 342,
@@ -168,7 +168,6 @@ async function main() {
         recordedAt: new Date(),
       },
     ],
-    skipDuplicates: true,
   });
 
   await prisma.review.upsert({
@@ -198,7 +197,6 @@ async function main() {
         type: "booking",
       },
     ],
-    skipDuplicates: true,
   });
 
   console.log("Seed complete:", { admin: admin.email, patient: patientUser.email, nurse: nurseUser.email });

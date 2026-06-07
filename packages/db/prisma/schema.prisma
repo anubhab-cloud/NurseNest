@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -50,7 +50,7 @@ model PatientProfile {
   fullName         String
   dateOfBirth      DateTime
   bloodGroup       String?
-  allergies        String[] @default([])
+  allergies        String   @default("")
   emergencyContact String?
   address          String?
   lat              Float?
@@ -66,7 +66,7 @@ model NurseProfile {
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   fullName            String
   certificationNumber String
-  specializations     String[] @default([])
+  specializations     String   @default("")
   yearsExp            Int      @default(0)
   rating              Float    @default(0)
   totalVisits         Int      @default(0)
@@ -142,7 +142,7 @@ model VisitNote {
   observations   String
   medications    String?
   nextVisitDate  DateTime?
-  attachmentUrls String[]     @default([])
+  attachmentUrls String       @default("")
   createdAt      DateTime     @default(now())
 }
 
