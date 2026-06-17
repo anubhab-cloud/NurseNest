@@ -14,6 +14,7 @@ import Pricing from './pages/Pricing';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Blog from './pages/Blog';
+import BlogDetail from './pages/BlogDetail';
 import Booking from './pages/Booking';
 import PatientDashboard from './pages/dashboard/PatientDashboard';
 
@@ -58,6 +59,7 @@ function AppRoutes() {
       <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
       <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
       <Route path="/blog" element={<PublicLayout><Blog /></PublicLayout>} />
+      <Route path="/blog/:slug" element={<PublicLayout><BlogDetail /></PublicLayout>} />
 
       {/* Auth pages (no navbar/footer) */}
       <Route path="/login" element={<Login />} />
