@@ -11,4 +11,3 @@ coverage
 .vercel
 *.db
 *.db-journal
-homecare/

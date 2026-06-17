@@ -1,0 +1,245 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,400&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base ────────────────────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Lenis overrides this — needed for smooth scroll */
+    height: 100%;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply bg-white text-gray-900 antialiased;
+    /* Prevent horizontal overflow on mobile */
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    min-height: 100%;
+    /* Improve tap highlight on mobile */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    line-height: 1.2;
+  }
+
+  /* Better touch targets on mobile */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  img, video { max-width: 100%; height: auto; }
+
+  /* Remove autofill yellow on iOS */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px white inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+}
+
+/* ─── Components ──────────────────────────────────────────────────────────── */
+@layer components {
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/30 shadow-glass;
+  }
+  .glass-dark {
+    @apply bg-gray-900/60 backdrop-blur-xl border border-white/10;
+  }
+
+  /* Buttons — bigger touch targets on mobile */
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold
+           px-5 py-3 sm:px-6 sm:py-3 rounded-xl
+           hover:from-primary-700 hover:to-primary-800
+           active:scale-95
+           transition-all duration-200
+           shadow-lg hover:shadow-glow
+           touch-manipulation
+           cursor-pointer
+           select-none;
+  }
+  .btn-outline {
+    @apply border-2 border-primary-600 text-primary-600 font-semibold
+           px-5 py-3 sm:px-6 sm:py-3 rounded-xl
+           hover:bg-primary-600 hover:text-white
+           active:scale-95
+           transition-all duration-200
+           touch-manipulation
+           select-none;
+  }
+  .btn-ghost {
+    @apply text-gray-600 font-medium px-3 py-2 rounded-lg
+           hover:bg-gray-100 active:bg-gray-200
+           transition-all duration-150
+           touch-manipulation;
+  }
+
+  .card-premium {
+    @apply bg-white rounded-2xl shadow-card border border-gray-100
+           transition-all duration-300
+           hover:shadow-premium sm:hover:-translate-y-1;
+  }
+
+  /* Responsive section titles */
+  .section-title {
+    @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl
+           font-bold font-display text-gray-900 leading-tight;
+  }
+  .section-subtitle {
+    @apply text-base sm:text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-600 via-teal-500 to-primary-700
+           bg-clip-text text-transparent;
+  }
+  .gradient-bg {
+    background: linear-gradient(135deg, #eff8ff 0%, #f0fdf9 50%, #f0fdf4 100%);
+  }
+
+  /* Mobile-safe input */
+  .input-field {
+    @apply w-full px-4 py-3 border border-gray-200 rounded-xl
+           focus:ring-2 focus:ring-primary-500 focus:border-transparent
+           outline-none transition-all duration-200
+           bg-white text-gray-900 placeholder:text-gray-400
+           text-base; /* Prevent iOS zoom on input focus (must be >= 16px) */
+    font-size: 16px;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+    min-height: unset;
+    min-width: unset;
+  }
+}
+
+/* ─── Utilities ───────────────────────────────────────────────────────────── */
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .text-balance { text-wrap: balance; }
+  .touch-manipulation { touch-action: manipulation; }
+
+  /* Safe area for notched phones */
+  .safe-top    { padding-top: env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-left   { padding-left: env(safe-area-inset-left); }
+  .safe-right  { padding-right: env(safe-area-inset-right); }
+}
+
+/* ─── Lenis smooth scroll ─────────────────────────────────────────────────── */
+html.lenis, html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped { overflow: hidden; }
+
+/* ─── Custom scrollbar (desktop only) ────────────────────────────────────── */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #f1f5f9; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+}
+
+/* ─── Animated gradient background ───────────────────────────────────────── */
+.animated-gradient {
+  background: linear-gradient(-45deg, #eff8ff, #f0fdf9, #dbeffe, #ccfbef);
+  background-size: 400% 400%;
+  animation: gradient 10s ease infinite;
+}
+@keyframes gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+
+/* ─── Floating animation ──────────────────────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-14px); }
+}
+.animate-float { animation: float 5s ease-in-out infinite; }
+
+/* ─── Page slide-up entry ─────────────────────────────────────────────────── */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter { animation: slideUp 0.45s ease-out both; }
+
+/* ─── Horizontal scroll snap (service cards on mobile) ───────────────────── */
+.snap-x-scroll {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding: 1rem;
+  gap: 1rem;
+  padding-bottom: 1rem;
+}
+.snap-x-scroll > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* ─── Bottom nav safe area ────────────────────────────────────────────────── */
+.bottom-nav {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+/* ─── Pulse dot (live indicator) ─────────────────────────────────────────── */
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(1.4); }
+}
+.pulse-dot { animation: pulseDot 1.8s ease-in-out infinite; }
+
+/* ─── Skeleton loading ────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 8px;
+}
+
+/* ─── Mobile hero text clamp ──────────────────────────────────────────────── */
+@media (max-width: 380px) {
+  .hero-title { font-size: clamp(2rem, 10vw, 3rem) !important; }
+}
+
+/* ─── Prevent overscroll bounce on iOS (body level) ──────────────────────── */
+@supports (-webkit-overflow-scrolling: touch) {
+  body { position: relative; }
+}
+
+/* ─── Focus visible for accessibility ────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #3897f4;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
