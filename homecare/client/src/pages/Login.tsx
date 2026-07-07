@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import NurseNestLogo from '../components/brand/NurseNestLogo';
 
 export default function Login() {
   const [email, setEmail] = useState('patient@homecare.app');
@@ -36,11 +37,8 @@ export default function Login() {
               style={{ width: `${80 + i * 40}px`, height: `${80 + i * 40}px`, top: `${10 + i * 15}%`, left: `${5 + i * 12}%` }} />
           ))}
         </div>
-        <Link to="/" className="flex items-center gap-2.5 relative z-10">
-          <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
-            <Heart className="w-5 h-5 text-white fill-white" />
-          </div>
-          <span className="text-xl font-bold font-display text-white">HomeCare<span className="text-teal-300">+</span></span>
+        <Link to="/" className="flex items-center relative z-10" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+          <NurseNestLogo size={40} dark />
         </Link>
 
         <div className="relative z-10">
@@ -72,10 +70,7 @@ export default function Login() {
         <div className="w-full max-w-md">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-3xl shadow-premium p-8 border border-gray-100">
             <div className="flex items-center gap-2 lg:hidden mb-6">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-teal-500 rounded-xl flex items-center justify-center">
-                <Heart className="w-4 h-4 text-white fill-white" />
-              </div>
-              <span className="font-bold font-display text-gray-900">HomeCare<span className="text-primary-600">+</span></span>
+              <NurseNestLogo size={32} />
             </div>
 
             <h1 className="text-2xl font-bold font-display text-gray-900 mb-1">Welcome back</h1>

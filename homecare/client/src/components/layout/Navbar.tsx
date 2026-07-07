@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Heart, Menu, X, Phone, User, LogOut, LayoutDashboard,
+  Menu, X, Phone, User, LogOut, LayoutDashboard,
   Home, Briefcase, Info, BookOpen, Mail, Tag, Calendar
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { scrollTo } from '../../hooks/useSmoothScroll';
+import NurseNestLogo from '../brand/NurseNestLogo';
 
 const navLinks = [
   { label: 'Home',     href: '/',        icon: Home },
@@ -81,19 +82,8 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-16">
 
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 group shrink-0" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-primary-500 to-teal-500 rounded-xl
-                              flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-white fill-white" />
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="text-base sm:text-lg font-bold font-display text-gray-900">
-                  HomeCare<span className="text-primary-600">+</span>
-                </span>
-                <span className="text-[9px] text-gray-400 font-semibold tracking-widest uppercase hidden sm:block">
-                  Premium Healthcare
-                </span>
-              </div>
+            <Link to="/" className="shrink-0 flex items-center" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+              <NurseNestLogo size={36} />
             </Link>
 
             {/* Desktop Nav */}
@@ -230,11 +220,8 @@ export default function Navbar() {
             >
               {/* Drawer header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <Link to="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-                  <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-teal-500 rounded-xl flex items-center justify-center">
-                    <Heart className="w-4 h-4 text-white fill-white" />
-                  </div>
-                  <span className="font-bold font-display text-gray-900">HomeCare<span className="text-primary-600">+</span></span>
+                <Link to="/" onClick={() => setDrawerOpen(false)} className="flex items-center" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+                  <NurseNestLogo size={32} />
                 </Link>
                 <button onClick={() => setDrawerOpen(false)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100">
                   <X className="w-5 h-5 text-gray-600" />

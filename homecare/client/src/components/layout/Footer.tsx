@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Heart, Phone, Mail, MapPin, Facebook, Twitter, Instagram, Linkedin, Youtube } from 'lucide-react';
+import { Phone, Mail, MapPin, Facebook, Twitter, Instagram, Linkedin, Youtube } from 'lucide-react';
 import { useState } from 'react';
+import NurseNestLogo from '../brand/NurseNestLogo';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
@@ -31,11 +32,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <Link to="/" className="flex items-center gap-2.5 mb-4">
-              <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-teal-500 rounded-xl flex items-center justify-center">
-                <Heart className="w-5 h-5 text-white fill-white" />
-              </div>
-              <span className="text-xl font-bold font-display text-white">HomeCare<span className="text-primary-400">+</span></span>
+            <Link to="/" className="flex items-center gap-2.5 mb-4" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+              <NurseNestLogo size={36} dark />
             </Link>
             <p className="text-gray-400 text-sm leading-relaxed mb-6 max-w-xs">
               India's most trusted home healthcare platform. Connecting patients with certified caregivers since 2020.

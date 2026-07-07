@@ -10,6 +10,7 @@ import {
   MessageSquare, User, Home, Package
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import NurseNestLogo from '../../components/brand/NurseNestLogo';
 
 // ─── Mock Data ─────────────────────────────────────────────────────────────────
 const appointments = [
@@ -140,11 +141,8 @@ export default function PatientDashboard() {
     <aside className="flex flex-col h-full bg-white">
       {/* Logo */}
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-          <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-teal-500 rounded-xl flex items-center justify-center shadow-md">
-            <Heart className="w-4 h-4 text-white fill-white" />
-          </div>
-          <span className="font-bold font-display text-gray-900">HomeCare<span className="text-primary-600">+</span></span>
+        <Link to="/" className="flex items-center" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+          <NurseNestLogo size={32} />
         </Link>
         <button onClick={() => setSideOpen(false)} className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100">
           <X className="w-4 h-4 text-gray-500" />
