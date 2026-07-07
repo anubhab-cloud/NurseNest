@@ -1,192 +1,172 @@
-"use client";
 import { Suspense, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, OrbitControls, Environment, ContactShadows, Float, Html } from '@react-three/drei';
 import { motion } from 'framer-motion';
 import * as THREE from 'three';
 
-// ── Preload ───────────────────────────────────────────────────────────────────
+// ── Preload model immediately ─────────────────────────────────────────────────
 useGLTF.preload('/nurse.glb');
 
-// ── The 3D model ──────────────────────────────────────────────────────────────
+// ── Inner model component (must be inside Canvas) ─────────────────────────────
 function Model({ hovered }: { hovered: boolean }) {
-  const group = useRef<THREE.Group>(null!);
-  const { scene } = useGLTF('/nurse.glb');
+  const ref = useRef<THREE.Group>(null!);
+  const { scene } = useGLTF('/nurse.glb') as any;
 
-  // Clone scene so it's not shared between renders
-  const cloned = scene.clone(true);
-
-  // Smooth materials — enhance quality
-  cloned.traverse((child) => {
-    if ((child as THREE.Mesh).isMesh) {
-      const mesh = child as THREE.Mesh;
-      mesh.castShadow    = true;
-      mesh.receiveShadow = true;
-      if (Array.isArray(mesh.material)) {
-        mesh.material.forEach(m => {
-          if (m instanceof THREE.MeshStandardMaterial) {
-            m.roughness  = 0.45;
-            m.metalness  = 0.05;
-            m.envMapIntensity = 1.2;
+  // Enhance materials for quality
+  scene.traverse((child: any) => {
+    if (child.isMesh) {
+      child.castShadow    = true;
+      child.receiveShadow = true;
+      if (child.material) {
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach((m: any) => {
+          if (m.isMeshStandardMaterial) {
+            m.roughness         = 0.5;
+            m.metalness         = 0.05;
+            m.envMapIntensity   = 1.4;
           }
         });
-      } else if (mesh.material instanceof THREE.MeshStandardMaterial) {
-        mesh.material.roughness  = 0.45;
-        mesh.material.metalness  = 0.05;
-        mesh.material.envMapIntensity = 1.2;
       }
     }
   });
 
-  // Gentle auto-rotation + slight bob
-  useFrame((state) => {
-    if (!group.current) return;
-    const t = state.clock.getElapsedTime();
-    group.current.rotation.y = Math.sin(t * 0.35) * 0.25;       // gentle sway
-    group.current.position.y = Math.sin(t * 0.8) * 0.04 - 0.1;  // soft float
-    // Scale up slightly on hover
-    const target = hovered ? 1.04 : 1.0;
-    group.current.scale.lerp(
-      new THREE.Vector3(target, target, target),
-      0.08
-    );
+  // Animate on every frame
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const t = clock.getElapsedTime();
+    // Gentle Y-axis sway
+    ref.current.rotation.y = Math.sin(t * 0.4) * 0.22;
+    // Smooth scale on hover
+    const target = hovered ? 1.05 : 1.0;
+    ref.current.scale.x += (target - ref.current.scale.x) * 0.07;
+    ref.current.scale.y += (target - ref.current.scale.y) * 0.07;
+    ref.current.scale.z += (target - ref.current.scale.z) * 0.07;
   });
 
   return (
-    <group ref={group} dispose={null}>
+    <group ref={ref} dispose={null}>
       <primitive
-        object={cloned}
-        scale={2.1}
-        position={[0, -1.6, 0]}
-        rotation={[0, 0.2, 0]}
+        object={scene}
+        scale={2.0}
+        position={[0, -1.55, 0]}
+        rotation={[0, 0.15, 0]}
       />
     </group>
   );
 }
 
-// ── Loading placeholder ───────────────────────────────────────────────────────
+// ── Loading spinner inside canvas ─────────────────────────────────────────────
 function Loader() {
   return (
     <Html center>
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-12 h-12 rounded-full border-3 border-white/20 border-t-white animate-spin"
-          style={{ borderWidth: '3px' }} />
-        <p className="text-white/60 text-xs font-medium tracking-wide">Loading 3D Model...</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: '50%',
+          border: '3px solid rgba(255,255,255,0.15)',
+          borderTopColor: '#2563EB',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontFamily: 'Inter,sans-serif', letterSpacing: '0.05em' }}>
+          Loading model…
+        </p>
       </div>
     </Html>
   );
 }
 
-// ── Main exported component ───────────────────────────────────────────────────
+// ── Props ─────────────────────────────────────────────────────────────────────
 interface Props {
   className?: string;
   height?: number;
-  autoRotate?: boolean;
   interactive?: boolean;
 }
 
-export default function NurseModel({
-  className = '',
-  height = 520,
-  autoRotate = false,
-  interactive = true,
-}: Props) {
+// ── Main exported component ───────────────────────────────────────────────────
+export default function NurseModel({ className = '', height = 500, interactive = true }: Props) {
   const [hovered, setHovered] = useState(false);
 
   return (
     <motion.div
-      className={`relative ${className}`}
-      style={{ height, cursor: hovered ? 'grab' : 'default' }}
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      className={`relative select-none ${className}`}
+      style={{ height, cursor: interactive ? (hovered ? 'grabbing' : 'grab') : 'default' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 1, ease: 'easeOut' }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Glow behind the model */}
-      <div className="absolute inset-0 flex items-end justify-center pointer-events-none">
-        <div className="w-72 h-72 rounded-full blur-3xl opacity-20"
-          style={{ background: 'radial-gradient(circle, #2563EB, #14B8A6)' }} />
-      </div>
+      {/* Ambient glow behind model */}
+      <div style={{
+        position: 'absolute', bottom: '10%', left: '50%',
+        transform: 'translateX(-50%)',
+        width: 280, height: 280, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(37,99,235,0.18) 0%, transparent 70%)',
+        pointerEvents: 'none', zIndex: 0,
+      }} />
 
       <Canvas
         shadows
         dpr={[1, 1.5]}
-        camera={{ position: [0, 0.5, 5], fov: 38 }}
-        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-        style={{ background: 'transparent' }}
+        camera={{ position: [0, 0.6, 5.2], fov: 36 }}
+        gl={{ antialias: true, alpha: true }}
+        style={{ background: 'transparent', zIndex: 1 }}
       >
         {/* Lighting */}
-        <ambientLight intensity={0.6} />
+        <ambientLight intensity={0.55} />
         <directionalLight
-          position={[3, 8, 4]}
-          intensity={1.8}
+          position={[4, 8, 5]}
+          intensity={1.6}
           castShadow
-          shadow-mapSize={[1024, 1024]}
-          shadow-camera-near={0.5}
-          shadow-camera-far={30}
-          shadow-camera-left={-5}
-          shadow-camera-right={5}
-          shadow-camera-top={5}
-          shadow-camera-bottom={-5}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
         />
-        <directionalLight position={[-3, 2, -2]} intensity={0.4} color="#14B8A6" />
-        <pointLight position={[0, 4, 2]} intensity={0.6} color="#2563EB" />
-        <hemisphereLight
-          args={['#EFF6FF', '#F0FDFB', 0.5]}
-        />
+        <directionalLight position={[-3, 3, -2]} intensity={0.35} color="#14B8A6" />
+        <pointLight position={[0, 3, 3]} intensity={0.5} color="#2563EB" />
+        <hemisphereLight args={['#e0f2fe', '#f0fdf9', 0.4]} />
 
-        {/* Environment for reflections */}
+        {/* HDR environment for reflections */}
         <Environment preset="city" />
 
-        {/* Ground shadow */}
+        {/* Contact shadow on ground */}
         <ContactShadows
-          position={[0, -1.65, 0]}
-          opacity={0.35}
-          scale={6}
-          blur={2.5}
-          far={4}
-          color="#1E3A5F"
+          position={[0, -1.6, 0]}
+          opacity={0.3}
+          scale={5}
+          blur={2}
+          far={3.5}
+          color="#1e3a5f"
         />
 
-        {/* Float wrapping for extra depth */}
-        <Float
-          speed={1.2}
-          rotationIntensity={0.08}
-          floatIntensity={0.3}
-          floatingRange={[-0.05, 0.05]}
-        >
+        {/* Float for organic motion */}
+        <Float speed={1.0} rotationIntensity={0.06} floatIntensity={0.25}>
           <Suspense fallback={<Loader />}>
             <Model hovered={hovered} />
           </Suspense>
         </Float>
 
-        {/* Orbit controls — only allow horizontal drag */}
+        {/* Drag controls */}
         {interactive && (
           <OrbitControls
             enableZoom={false}
             enablePan={false}
-            minPolarAngle={Math.PI / 2.4}
-            maxPolarAngle={Math.PI / 1.8}
-            autoRotate={autoRotate}
-            autoRotateSpeed={1.2}
-            dampingFactor={0.08}
+            minPolarAngle={Math.PI / 2.6}
+            maxPolarAngle={Math.PI / 1.9}
+            dampingFactor={0.07}
             enableDamping
           />
         )}
       </Canvas>
 
-      {/* Drag hint */}
+      {/* Hint text */}
       {interactive && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: hovered ? 0 : 0.5 }}
-          transition={{ duration: 0.3 }}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs font-medium pointer-events-none whitespace-nowrap"
-          style={{ color: 'rgba(255,255,255,0.5)' }}
-        >
+        <p style={{
+          position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
+          fontSize: '11px', color: 'rgba(100,116,139,0.7)', fontFamily: 'Inter,sans-serif',
+          letterSpacing: '0.04em', whiteSpace: 'nowrap', pointerEvents: 'none',
+          opacity: hovered ? 0 : 1, transition: 'opacity 0.3s',
+        }}>
           ↔ Drag to rotate
-        </motion.p>
+        </p>
       )}
     </motion.div>
   );

@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.7",
+    "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^9.6.1",
     "@studio-freight/lenis": "^1.0.42",
     "axios": "^1.6.5",

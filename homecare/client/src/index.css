@@ -629,3 +629,131 @@ html.lenis, html.lenis body { height: auto; }
   font-size: 14px;
   line-height: 1.7;
 }
+
+/* ─── Legacy class aliases — keeps old pages working ─────────────────────── */
+@layer components {
+  /* Old gradient-bg still used in Pricing, About, Contact etc */
+  .gradient-bg {
+    background: linear-gradient(135deg, #EFF8FF 0%, #F0FDF9 50%, #F0FDF4 100%);
+  }
+
+  /* Old btn-primary used in Login, Register, Dashboard, Booking */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #1D77F2;
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: background 150ms, box-shadow 150ms, transform 150ms;
+    box-shadow: 0 1px 3px rgba(29,119,242,0.3);
+    touch-action: manipulation;
+    user-select: none;
+    text-decoration: none;
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .btn-primary:hover  { background: #155DD4; box-shadow: 0 4px 12px rgba(29,119,242,0.35); }
+  .btn-primary:active { transform: scale(0.97); }
+
+  /* Old btn-outline */
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: transparent;
+    color: #1D77F2;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: 2px solid #1D77F2;
+    cursor: pointer;
+    transition: all 150ms;
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .btn-outline:hover { background: #1D77F2; color: #FFFFFF; }
+
+  /* Old card-premium */
+  .card-premium {
+    background: #FFFFFF;
+    border: 1px solid #EBEBEB;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: box-shadow 250ms, transform 250ms;
+  }
+  .card-premium:hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+    transform: translateY(-2px);
+  }
+
+  /* Old section-title */
+  .section-title {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-size: clamp(24px, 3.5vw, 40px);
+    font-weight: 700;
+    color: #0F0F0F;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  /* Old section-subtitle */
+  .section-subtitle {
+    font-size: 17px;
+    color: #5C5C5C;
+    line-height: 1.75;
+    max-width: 640px;
+    margin-inline: auto;
+  }
+
+  /* Old gradient-text */
+  .gradient-text {
+    background: linear-gradient(135deg, #1D77F2, #14B8A4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Old input-field */
+  .input-field {
+    width: 100%;
+    padding: 12px 16px;
+    background: #FFFFFF;
+    border: 1px solid #D4D4D4;
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    color: #0F0F0F;
+    outline: none;
+    transition: border-color 150ms, box-shadow 150ms;
+  }
+  .input-field:focus { border-color: #1D77F2; box-shadow: 0 0 0 3px rgba(29,119,242,0.15); }
+
+  /* Old animated-gradient (hero) */
+  .animated-gradient {
+    background: linear-gradient(-45deg, #EFF8FF, #F0FDF9, #DBEFFE, #CCF9EF);
+    background-size: 400% 400%;
+    animation: gradient 10s ease infinite;
+  }
+
+  /* primary-600 color for Tailwind references */
+  .text-primary-600 { color: #1D77F2; }
+  .bg-primary-50    { background-color: #EFF6FF; }
+  .bg-primary-600   { background-color: #1D77F2; }
+  .border-primary-200 { border-color: #BAD9FF; }
+  .ring-primary-500   { --tw-ring-color: #3897F4; }
+
+  /* font-display alias */
+  .font-display { font-family: 'Outfit', 'Inter', sans-serif; }
+
+  /* shadow-card */
+  .shadow-card { box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+}
