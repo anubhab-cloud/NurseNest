@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
 import {
@@ -7,6 +7,9 @@ import {
   Heart, Activity, UserCheck, Zap, Award, DollarSign, Headphones,
   Clock, Calendar, TrendingUp, Navigation, MessageSquare
 } from 'lucide-react';
+
+// Lazy-load the heavy 3D component
+const NurseModel = lazy(() => import('../components/three/NurseModel'));
 
 // ── Animation presets ──────────────────────────────────────────────────────
 const fadeUp  = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } } as const;
@@ -153,42 +156,28 @@ export default function Home() {
               </motion.div>
             </motion.div>
 
-            {/* Right — 5 cols offset 1 */}
-            <motion.div className="col-span-12 lg:col-span-5 lg:col-start-8 hidden lg:block"
-              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-              <div className="relative h-[480px]">
-                {/* Main card */}
-                <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                  className="absolute inset-x-0 top-8 card" style={{ boxShadow: 'var(--shadow-3)' }}>
-                  <div className="card-body">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="icon-box-xl" style={{ background: 'linear-gradient(135deg,#1D77F2,#14B8A4)' }}>
-                        <span className="text-2xl">👨‍⚕️</span>
-                      </div>
-                      <div>
-                        <h4 className="text-gray-900">Dr. Priya Nair</h4>
-                        <p className="text-muted mt-0.5">Senior Home Nurse · 8 yrs exp</p>
-                        <div className="flex gap-0.5 mt-1.5">
-                          {[1,2,3,4,5].map(i => <Star key={i} className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 mb-6">
-                      {['Elder Care', 'IV Therapy', 'Wound Care'].map(s => (
-                        <span key={s} className="badge badge-blue">{s}</span>
-                      ))}
-                    </div>
-                    <Link to="/booking" className="btn btn-primary w-full justify-center">
-                      Book Now — ₹499/hr
-                    </Link>
-                  </div>
-                </motion.div>
+            {/* Right — 3D Nurse Model */}
+            <motion.div className="col-span-12 lg:col-span-5 lg:col-start-8 hidden lg:flex items-center justify-center"
+              initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+              <div className="relative w-full">
+                {/* Background pill glow */}
+                <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-[380px] rounded-3xl opacity-15 blur-2xl"
+                  style={{ background: 'linear-gradient(135deg, #2563EB, #14B8A6)' }} />
 
-                {/* Arrival badge */}
-                <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                  className="absolute -left-6 bottom-32 card px-4 py-3 flex items-center gap-3"
-                  style={{ width: '200px', boxShadow: 'var(--shadow-2)' }}>
+                {/* 3D Model */}
+                <Suspense fallback={
+                  <div className="flex items-center justify-center h-[480px]">
+                    <div className="w-12 h-12 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin" />
+                  </div>
+                }>
+                  <NurseModel height={480} interactive />
+                </Suspense>
+
+                {/* Floating badge — arriving */}
+                <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+                  className="absolute left-0 bottom-28 card px-4 py-3 flex items-center gap-3"
+                  style={{ width: '196px', boxShadow: 'var(--shadow-2)' }}>
                   <div className="icon-box-md" style={{ background: '#ECFDF5' }}>
                     <Navigation className="w-4 h-4 text-green-600" />
                   </div>
@@ -198,16 +187,27 @@ export default function Home() {
                   </div>
                 </motion.div>
 
-                {/* Growth badge */}
-                <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                  className="absolute -right-4 bottom-16 card px-4 py-3 flex items-center gap-3"
-                  style={{ width: '196px', boxShadow: 'var(--shadow-2)' }}>
-                  <div className="icon-box-md" style={{ background: '#E0EFFF' }}>
-                    <TrendingUp className="w-4 h-4 text-blue-600" />
+                {/* Floating badge — rating */}
+                <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
+                  className="absolute right-0 bottom-16 card px-4 py-3 flex items-center gap-3"
+                  style={{ width: '180px', boxShadow: 'var(--shadow-2)' }}>
+                  <div className="icon-box-md" style={{ background: '#FFFBEB' }}>
+                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                   </div>
                   <div>
-                    <p className="text-micro">Monthly Visits</p>
-                    <p className="font-bold text-gray-900 text-sm">+12,400 this month</p>
+                    <p className="text-micro">Avg. Rating</p>
+                    <p className="font-bold text-gray-900 text-sm">4.9 / 5.0 ⭐</p>
+                  </div>
+                </motion.div>
+
+                {/* Floating badge — verified */}
+                <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
+                  className="absolute right-4 top-16 card px-3 py-2.5 flex items-center gap-2.5"
+                  style={{ boxShadow: 'var(--shadow-2)' }}>
+                  <CheckCircle className="w-4 h-4 text-teal-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-micro leading-tight">Certified &</p>
+                    <p className="font-semibold text-gray-900 text-xs">Background Verified</p>
                   </div>
                 </motion.div>
               </div>
