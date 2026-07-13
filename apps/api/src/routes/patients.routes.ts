@@ -33,9 +33,11 @@ export async function patientsRoutes(app: FastifyInstance): Promise<void> {
 
   app.patch("/me", async (request, reply) => {
     const data = parseOrThrow(updatePatientSchema, request.body);
+    const { allergies, dateOfBirth, ...rest } = data;
     const updated = await patientRepository.update(request.user!.sub, {
-      ...data,
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
+      ...rest,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+      allergies: allergies ? allergies.join(",") : undefined,
     });
     return reply.send(apiSuccess(toPatientProfile(updated)));
   });

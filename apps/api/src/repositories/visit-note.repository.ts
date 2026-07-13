@@ -20,14 +20,19 @@ export const visitNoteRepository = {
     nextVisitDate?: Date;
     attachmentUrls?: string[];
   }): Promise<VisitNote> {
+    const { attachmentUrls, ...rest } = data;
+    const attachmentUrlsStr = attachmentUrls ? attachmentUrls.join(",") : "";
     return prisma.visitNote.upsert({
       where: { bookingId: data.bookingId },
-      create: data,
+      create: {
+        ...rest,
+        attachmentUrls: attachmentUrlsStr,
+      },
       update: {
         observations: data.observations,
         medications: data.medications,
         nextVisitDate: data.nextVisitDate,
-        attachmentUrls: data.attachmentUrls,
+        attachmentUrls: attachmentUrlsStr,
       },
     });
   },

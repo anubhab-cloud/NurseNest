@@ -11,6 +11,7 @@ export interface AuthUserDto {
 export interface LoginResponseDto {
   user: AuthUserDto;
   accessToken: string;
+  refreshToken?: string;
 }
 
 export interface RegisterPatientDto {

@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@react-three/drei": "^9.122.0",
-    "@react-three/fiber": "^9.6.1",
+    "@react-three/drei": "^9.105.6",
+    "@react-three/fiber": "^8.18.0",
     "@studio-freight/lenis": "^1.0.42",
     "axios": "^1.6.5",
     "framer-motion": "^12.40.0",
@@ -21,7 +21,7 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.3",
     "socket.io-client": "^4.7.4",
-    "three": "^0.184.0"
+    "three": "^0.169.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.48",

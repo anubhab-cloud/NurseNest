@@ -16,7 +16,13 @@ export const patientRepository = {
     lat?: number;
     lng?: number;
   }): Promise<PatientProfile> {
-    return prisma.patientProfile.create({ data });
+    const { allergies, ...rest } = data;
+    return prisma.patientProfile.create({
+      data: {
+        ...rest,
+        allergies: allergies ? allergies.join(",") : "",
+      },
+    });
   },
 
   update(userId: string, data: Partial<Omit<PatientProfile, "userId">>): Promise<PatientProfile> {

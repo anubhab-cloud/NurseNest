@@ -74,7 +74,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(201).send(apiSuccess({ user: toAuthUser(user) }));
   });
 
-  app.post("/login", { config: { rateLimit: { max: 5, timeWindow: "15 minutes" } } }, async (request, reply) => {
+  app.post("/login", { config: { rateLimit: { max: env.nodeEnv === "development" ? 1000 : 5, timeWindow: "15 minutes" } } }, async (request, reply) => {
     const data = parseOrThrow(loginSchema, request.body);
     const user = await userRepository.findByEmail(data.email);
     if (!user || !(await verifyPassword(data.password, user.passwordHash))) {
@@ -93,6 +93,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       apiSuccess({
         user: toAuthUser(user),
         accessToken,
+        refreshToken,
       }),
     );
   });

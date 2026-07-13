@@ -7,6 +7,7 @@ declare module "next-auth" {
   interface User {
     role: Role;
     accessToken?: string;
+    refreshToken?: string;
   }
   interface Session {
     user: {
@@ -15,6 +16,7 @@ declare module "next-auth" {
       role: Role;
     };
     accessToken?: string;
+    error?: string;
   }
 }
 
@@ -47,6 +49,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: json.data.user.email,
           role: json.data.user.role,
           accessToken: json.data.accessToken,
+          refreshToken: json.data.refreshToken,
         };
       },
     }),
@@ -58,7 +61,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token["id"] = user.id;
         token["role"] = user.role;
         token["accessToken"] = user.accessToken;
+        token["refreshToken"] = user.refreshToken;
+        token["accessTokenExpires"] = Date.now() + 15 * 60 * 1000 - 60000; // 14 mins from now (1 min buffer)
       }
+
+      // If the access token has not expired yet, return token
+      if (Date.now() < (token["accessTokenExpires"] as number)) {
+        return token;
+      }
+
+      // Access token has expired, try to refresh it
+      try {
+        const res = await fetch(`${internalApi}/api/v1/auth/refresh`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Cookie": `nursenest_refresh=${token["refreshToken"]}`,
+          },
+        });
+        const json = (await res.json()) as ApiResponse<{ accessToken: string }>;
+        if (!json.success) throw new Error("Failed to refresh token");
+
+        token["accessToken"] = json.data.accessToken;
+        token["accessTokenExpires"] = Date.now() + 15 * 60 * 1000 - 60000;
+      } catch (error) {
+        console.error("Error refreshing access token", error);
+        token["error"] = "RefreshAccessTokenError";
+      }
+
       return token;
     },
     async session({ session, token }) {
@@ -66,6 +96,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.id = token["id"] as string;
         session.user.role = token["role"] as Role;
         session.accessToken = token["accessToken"] as string | undefined;
+      }
+      if (token["error"]) {
+        session.error = token["error"] as string;
       }
       return session;
     },

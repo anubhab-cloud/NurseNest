@@ -12,7 +12,13 @@ export const nurseRepository = {
     specializations?: string[];
     yearsExp?: number;
   }): Promise<NurseProfile> {
-    return prisma.nurseProfile.create({ data });
+    const { specializations, ...rest } = data;
+    return prisma.nurseProfile.create({
+      data: {
+        ...rest,
+        specializations: specializations ? specializations.join(",") : "",
+      },
+    });
   },
 
   update(userId: string, data: Partial<Omit<NurseProfile, "userId">>): Promise<NurseProfile> {
