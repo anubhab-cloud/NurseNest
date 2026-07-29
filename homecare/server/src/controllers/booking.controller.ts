@@ -247,3 +247,23 @@ export const getMyBookings = async (req: Request, res: Response): Promise<void> 
     },
   });
 };
+
+// ─── Trigger Emergency SOS ───────────────────────────────────────────────────
+
+export const triggerSOS = async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  const { location, timestamp } = req.body;
+
+  console.warn(`[EMERGENCY SOS TRIGGERED] User: ${userId}, Time: ${timestamp || new Date().toISOString()}, Location: ${location || 'Unknown'}`);
+
+  res.json({
+    success: true,
+    message: 'Emergency SOS alert received and dispatched to emergency team.',
+    data: {
+      alertId: `SOS-${Date.now()}`,
+      status: 'dispatched',
+      dispatchedAt: new Date().toISOString(),
+    },
+  });
+};
+

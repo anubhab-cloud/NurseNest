@@ -10,6 +10,8 @@ import blogRoutes from './blog.routes';
 import reviewRoutes from './review.routes';
 import servicesRoutes from './services.routes';
 import aiRoutes from './ai.routes';
+import healthRoutes from './health.routes';
+import medicineRoutes from './medicine.routes';
 
 const router = Router();
 
@@ -24,6 +26,9 @@ router.use('/blogs', blogRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/services', servicesRoutes);
 router.use('/ai', aiRoutes);
+router.use('/health', healthRoutes);
+router.use('/medicines', medicineRoutes);
+
 
 // Health check
 router.get('/health', (req, res) => {

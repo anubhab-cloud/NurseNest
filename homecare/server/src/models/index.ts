@@ -4,3 +4,5 @@ export { default as Booking } from './Booking';
 export { ChatMessage, Conversation } from './ChatMessage';
 export { Payment, NursePayoutAccount, Payout } from './Payment';
 export { Notification, DeviceToken } from './Notification';
+export { default as HealthRecord } from './HealthRecord';
+export { default as Medicine } from './Medicine';

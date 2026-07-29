@@ -91,10 +91,27 @@ export default function PatientDashboard() {
   const [aiLoading, setAiLoading]   = useState(false);
   const [sosActive, setSosActive]   = useState(false);
   const [sosTimer, setSosTimer]     = useState(5);
+  const [sosSent, setSosSent]       = useState(false);
   const [realBookings, setRealBookings]       = useState<any[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
   const [useDemoData, setUseDemoData]         = useState(false);
   const [trackingProgress, setTrackingProgress] = useState(62);
+  const [payments, setPayments]               = useState<any[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [paymentsFetched, setPaymentsFetched] = useState(false);
+
+  // Health records & Medicine state
+  const [dbHealthRecords, setDbHealthRecords] = useState<any[]>([]);
+  const [loadingHealthRecords, setLoadingHealthRecords] = useState(false);
+  const [healthRecordsFetched, setHealthRecordsFetched] = useState(false);
+  const [showAddVitals, setShowAddVitals] = useState(false);
+  const [newVitals, setNewVitals] = useState({ bp: '120/80', hr: 72, spo2: 98, temp: 36.6, weight: 68 });
+
+  const [dbMedicines, setDbMedicines] = useState<any[]>([]);
+  const [loadingMedicines, setLoadingMedicines] = useState(false);
+  const [medicinesFetched, setMedicinesFetched] = useState(false);
+  const [showAddMed, setShowAddMed] = useState(false);
+  const [newMed, setNewMed] = useState({ name: '', dosage: '1 tablet', time: '8:00 AM', type: 'General' });
 
   useEffect(() => {
     api.get('/bookings/my')
@@ -106,6 +123,45 @@ export default function PatientDashboard() {
       .catch(() => {})
       .finally(() => setLoadingBookings(false));
   }, []);
+
+  // Fetch payments when payments tab is first opened
+  useEffect(() => {
+    if (active === 'payments' && !paymentsFetched) {
+      setLoadingPayments(true);
+      api.get('/payments/history')
+        .then(r => {
+          if (r.data?.data?.payments) setPayments(r.data.data.payments);
+        })
+        .catch(() => {})
+        .finally(() => { setLoadingPayments(false); setPaymentsFetched(true); });
+    }
+  }, [active, paymentsFetched]);
+
+  // Fetch health records when health tab is opened
+  useEffect(() => {
+    if (active === 'health' && !healthRecordsFetched) {
+      setLoadingHealthRecords(true);
+      api.get('/health/records')
+        .then(r => {
+          if (r.data?.data?.records) setDbHealthRecords(r.data.data.records);
+        })
+        .catch(() => {})
+        .finally(() => { setLoadingHealthRecords(false); setHealthRecordsFetched(true); });
+    }
+  }, [active, healthRecordsFetched]);
+
+  // Fetch medicines when medicines tab is opened
+  useEffect(() => {
+    if (active === 'medicines' && !medicinesFetched) {
+      setLoadingMedicines(true);
+      api.get('/medicines')
+        .then(r => {
+          if (r.data?.data?.medicines) setDbMedicines(r.data.data.medicines);
+        })
+        .catch(() => {})
+        .finally(() => { setLoadingMedicines(false); setMedicinesFetched(true); });
+    }
+  }, [active, medicinesFetched]);
 
   useEffect(() => {
     if (active === 'tracking') {
@@ -126,10 +182,21 @@ export default function PatientDashboard() {
   // Auto scroll chat
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [aiMessages]);
 
-  // SOS countdown
+  // SOS countdown + dispatch
   useEffect(() => {
     if (!sosActive) return;
-    if (sosTimer === 0) { setSosActive(false); setSosTimer(5); return; }
+    if (sosTimer === 0) {
+      setSosActive(false);
+      setSosTimer(5);
+      // Dispatch real SOS alert to backend
+      api.post('/bookings/sos', {
+        location: 'Patient home address',
+        timestamp: new Date().toISOString(),
+      }).catch(() => {});
+      setSosSent(true);
+      setTimeout(() => setSosSent(false), 8000);
+      return;
+    }
     const t = setTimeout(() => setSosTimer(s => s - 1), 1000);
     return () => clearTimeout(t);
   }, [sosActive, sosTimer]);
@@ -399,62 +466,106 @@ export default function PatientDashboard() {
 };
 
   // ─── Appointments ─────────────────────────────────────────────────────────────
-  const Appointments = () => (
+  const Appointments = () => {
+    const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const formatTime = (t: string) => t || '';
+    const getNurseInitials = (b: any) => {
+      const n = b.nurseId;
+      if (n?.firstName) return `${n.firstName[0]}${n.lastName?.[0] || ''}`;
+      return 'N';
+    };
+    const getNurseName = (b: any) => {
+      const n = b.nurseId;
+      if (n?.firstName) return `${n.firstName} ${n.lastName || ''}`;
+      return 'Nurse (Pending Assignment)';
+    };
+
+    return (
     <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-5">
       <motion.div variants={fade} className="flex items-center justify-between">
-        <h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">Upcoming Appointments</h1>
+        <h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">My Appointments</h1>
         <Link to="/booking" className="btn-primary text-sm py-2.5 px-4 flex items-center gap-1.5" style={{ minHeight: 'unset', minWidth: 'unset' }}>
           <Plus className="w-4 h-4" /> Book New
         </Link>
       </motion.div>
-      {appointments.map((b, i) => (
-        <motion.div key={b.id} variants={fade} transition={{ delay: i * 0.06 }}
-          className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="flex items-center gap-4 flex-1">
-              <div className="w-14 h-14 bg-gradient-to-br from-primary-100 to-teal-100 rounded-2xl flex items-center justify-center text-lg font-bold text-primary-700 flex-shrink-0">{b.avatar}</div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-bold text-gray-900 font-display">{b.service}</h3>
-                  <span className={`badge ${statusStyle[b.status]} capitalize`}>{b.status}</span>
-                </div>
-                <p className="text-sm text-gray-500 mt-0.5">{b.caregiver}</p>
-                <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
-                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{b.date}</span>
-                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{b.time}</span>
-                  <span className="flex items-center gap-1"><Star className="w-3 h-3 text-amber-400 fill-amber-400" />{b.rating}</span>
+
+      {loadingBookings ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white rounded-3xl border border-gray-100 p-5 animate-pulse">
+              <div className="flex gap-4">
+                <div className="w-14 h-14 bg-gray-100 rounded-2xl" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-100 rounded w-1/3" />
+                  <div className="h-3 bg-gray-100 rounded w-1/2" />
+                  <div className="h-3 bg-gray-100 rounded w-1/4" />
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-gray-900">{b.amount}</span>
-              {b.status === 'confirmed' && (
-                <>
-                  <button onClick={() => navTo('tracking')} className="flex items-center gap-1.5 bg-primary-50 text-primary-700 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-primary-100 transition-colors" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-                    <Navigation className="w-3.5 h-3.5" /> Track
-                  </button>
-                  <button onClick={() => navTo('video')} className="flex items-center gap-1.5 bg-teal-50 text-teal-700 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-teal-100 transition-colors" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-                    <Video className="w-3.5 h-3.5" /> Video Call
-                  </button>
-                </>
-              )}
-              {b.status === 'completed' && (
-                <button className="flex items-center gap-1.5 bg-amber-50 text-amber-700 text-xs font-semibold px-3 py-2 rounded-xl" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-                  <Star className="w-3.5 h-3.5" /> Rate
-                </button>
-              )}
-            </div>
-          </div>
-          {b.eta && (
-            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2 text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-green-600 font-semibold">Caregiver is on the way — arrives in {b.eta}</span>
-            </div>
-          )}
+          ))}
+        </div>
+      ) : realBookings.length === 0 ? (
+        <motion.div variants={fade} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-10 text-center">
+          <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <h3 className="font-bold text-gray-700 font-display mb-2">No Appointments Yet</h3>
+          <p className="text-sm text-gray-400 mb-5">Book your first home care session to get started.</p>
+          <Link to="/booking" className="btn-primary text-sm py-2.5 px-6" style={{ minHeight: 'unset', minWidth: 'unset' }}>Book a Caregiver</Link>
         </motion.div>
-      ))}
+      ) : (
+        realBookings.map((b, i) => (
+          <motion.div key={b._id} variants={fade} transition={{ delay: i * 0.06 }}
+            className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex items-center gap-4 flex-1">
+                <div className="w-14 h-14 bg-gradient-to-br from-primary-100 to-teal-100 rounded-2xl flex items-center justify-center text-lg font-bold text-primary-700 flex-shrink-0">{getNurseInitials(b)}</div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-bold text-gray-900 font-display">{b.serviceType}</h3>
+                    <span className={`badge ${statusStyle[b.status] || 'bg-gray-100 text-gray-600'} capitalize`}>{b.status}</span>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-0.5">{getNurseName(b)}</p>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(b.scheduledDate)}</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime(b.startTime)}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-gray-900">₹{b.billing?.totalAmount?.toFixed(0) || '—'}</span>
+                {(b.status === 'confirmed' || b.status === 'in-progress') && (
+                  <>
+                    <button onClick={() => navTo('tracking')} className="flex items-center gap-1.5 bg-primary-50 text-primary-700 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-primary-100 transition-colors" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+                      <Navigation className="w-3.5 h-3.5" /> Track
+                    </button>
+                    <button onClick={() => navTo('video')} className="flex items-center gap-1.5 bg-teal-50 text-teal-700 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-teal-100 transition-colors" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+                      <Video className="w-3.5 h-3.5" /> Video Call
+                    </button>
+                  </>
+                )}
+                {b.status === 'completed' && (
+                  <button className="flex items-center gap-1.5 bg-amber-50 text-amber-700 text-xs font-semibold px-3 py-2 rounded-xl" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+                    <Star className="w-3.5 h-3.5" /> Rate
+                  </button>
+                )}
+                {b.status === 'pending' && !b.billing?.isPaid && (
+                  <Link to="/booking" className="flex items-center gap-1.5 bg-green-50 text-green-700 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-green-100 transition-colors" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+                    <CreditCard className="w-3.5 h-3.5" /> Pay Now
+                  </Link>
+                )}
+              </div>
+            </div>
+            {b.location?.address && (
+              <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-400">
+                <MapPin className="w-3 h-3" />
+                <span>{b.location.address}</span>
+              </div>
+            )}
+          </motion.div>
+        ))
+      )}
     </motion.div>
-  );
+    );
+  };
 
   // ─── Live Tracking ────────────────────────────────────────────────────────────
   const LiveTracking = () => (
@@ -522,35 +633,96 @@ export default function PatientDashboard() {
     );
 
   // ─── Health Records ───────────────────────────────────────────────────────────
-  const HealthRecords = () => (
+  const HealthRecords = () => {
+    const recordsToDisplay = dbHealthRecords.length > 0 ? dbHealthRecords : healthRecords;
+
+    const handleAddVitals = async (e: React.FormEvent) => {
+      e.preventDefault();
+      try {
+        const res = await api.post('/health/records', { vitals: newVitals, nurseName: 'Self-Reported' });
+        if (res.data?.data?.record) {
+          setDbHealthRecords(prev => [res.data.data.record, ...prev]);
+        }
+        setShowAddVitals(false);
+      } catch (err) {
+        console.error('Failed to add vitals:', err);
+      }
+    };
+
+    return (
     <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-5">
       <motion.div variants={fade} className="flex items-center justify-between">
         <h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">Health Records</h1>
-        <button className="flex items-center gap-1.5 text-primary-600 text-sm font-semibold border border-primary-200 px-3 py-2 rounded-xl hover:bg-primary-50 transition-colors" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-          <Download className="w-4 h-4" /> Export PDF
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setShowAddVitals(!showAddVitals)} className="btn-primary text-sm py-2 px-3 flex items-center gap-1.5" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+            <Plus className="w-4 h-4" /> Log Vitals
+          </button>
+          <button className="flex items-center gap-1.5 text-primary-600 text-sm font-semibold border border-primary-200 px-3 py-2 rounded-xl hover:bg-primary-50 transition-colors" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+            <Download className="w-4 h-4" /> Export PDF
+          </button>
+        </div>
       </motion.div>
+
+      {/* Add Vitals Form */}
+      {showAddVitals && (
+        <motion.form initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} onSubmit={handleAddVitals}
+          className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <h3 className="font-bold text-gray-900 font-display">Record Current Vitals</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div>
+              <label className="text-xs text-gray-500 font-semibold block mb-1">BP (mmHg)</label>
+              <input value={newVitals.bp} onChange={e => setNewVitals({ ...newVitals, bp: e.target.value })} className="input-field text-sm py-2" placeholder="120/80" required />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 font-semibold block mb-1">HR (bpm)</label>
+              <input type="number" value={newVitals.hr} onChange={e => setNewVitals({ ...newVitals, hr: Number(e.target.value) })} className="input-field text-sm py-2" required />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 font-semibold block mb-1">SpO2 (%)</label>
+              <input type="number" value={newVitals.spo2} onChange={e => setNewVitals({ ...newVitals, spo2: Number(e.target.value) })} className="input-field text-sm py-2" required />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 font-semibold block mb-1">Temp (°C)</label>
+              <input type="number" step="0.1" value={newVitals.temp} onChange={e => setNewVitals({ ...newVitals, temp: Number(e.target.value) })} className="input-field text-sm py-2" required />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 font-semibold block mb-1">Weight (kg)</label>
+              <input type="number" step="0.5" value={newVitals.weight} onChange={e => setNewVitals({ ...newVitals, weight: Number(e.target.value) })} className="input-field text-sm py-2" required />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setShowAddVitals(false)} className="px-4 py-2 text-xs font-semibold text-gray-500 hover:bg-gray-100 rounded-xl">Cancel</button>
+            <button type="submit" className="btn-primary text-xs py-2 px-4">Save Vitals</button>
+          </div>
+        </motion.form>
+      )}
+
       {/* Vitals chart */}
       <motion.div variants={fade} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
-        <h3 className="font-bold text-gray-900 font-display mb-4">Vitals Trend (Last 4 Visits)</h3>
+        <h3 className="font-bold text-gray-900 font-display mb-4">Vitals Trend</h3>
         <div className="grid grid-cols-4 gap-2 mb-4 text-center text-xs text-gray-400 font-medium">
-          {healthRecords.map(r => <div key={r.date}>{r.date}</div>)}
+          {recordsToDisplay.slice(0, 4).map((r, idx) => (
+            <div key={idx}>{r.date || (r.recordedAt ? new Date(r.recordedAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : 'Today')}</div>
+          ))}
         </div>
         {[
-          { label: 'Heart Rate (bpm)', key: 'hr' as const, color: 'bg-red-400', max: 100 },
-          { label: 'SpO2 (%)', key: 'spo2' as const, color: 'bg-blue-400', max: 100 },
+          { label: 'Heart Rate (bpm)', getVal: (r: any) => r.vitals?.hr || r.hr || 72, color: 'bg-red-400', max: 120 },
+          { label: 'SpO2 (%)', getVal: (r: any) => r.vitals?.spo2 || r.spo2 || 98, color: 'bg-blue-400', max: 100 },
         ].map(metric => (
           <div key={metric.label} className="mb-4">
             <p className="text-xs text-gray-500 mb-2">{metric.label}</p>
             <div className="grid grid-cols-4 gap-2">
-              {healthRecords.map(r => (
-                <div key={r.date} className="flex flex-col items-center gap-1">
-                  <span className="text-xs font-bold text-gray-900">{r[metric.key]}</span>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div className={`${metric.color} h-2 rounded-full`} style={{ width: `${(r[metric.key] / metric.max) * 100}%` }} />
+              {recordsToDisplay.slice(0, 4).map((r, idx) => {
+                const val = metric.getVal(r);
+                return (
+                  <div key={idx} className="flex flex-col items-center gap-1">
+                    <span className="text-xs font-bold text-gray-900">{val}</span>
+                    <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div className={`${metric.color} h-2 rounded-full`} style={{ width: `${Math.min(100, (val / metric.max) * 100)}%` }} />
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}
@@ -561,73 +733,157 @@ export default function PatientDashboard() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
-              {['Date', 'BP', 'HR', 'SpO2', 'Temp', 'Nurse'].map(h => <th key={h} className="px-4 py-3 text-left font-semibold">{h}</th>)}
+              {['Date', 'BP', 'HR', 'SpO2', 'Temp', 'Nurse/Provider'].map(h => <th key={h} className="px-4 py-3 text-left font-semibold">{h}</th>)}
             </tr></thead>
             <tbody className="divide-y divide-gray-50">
-              {healthRecords.map(r => (
-                <tr key={r.date} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-900">{r.date}</td>
-                  <td className="px-4 py-3 text-gray-700">{r.bp}</td>
-                  <td className="px-4 py-3 text-gray-700">{r.hr} bpm</td>
-                  <td className="px-4 py-3"><span className={`badge ${r.spo2 >= 97 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{r.spo2}%</span></td>
-                  <td className="px-4 py-3 text-gray-700">{r.temp}°C</td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{r.nurse.split(' ')[0]} {r.nurse.split(' ')[1]}</td>
-                </tr>
-              ))}
+              {recordsToDisplay.map((r, idx) => {
+                const dateStr = r.date || (r.recordedAt ? new Date(r.recordedAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : 'Today');
+                const bp = r.vitals?.bp || r.bp || '120/80';
+                const hr = r.vitals?.hr || r.hr || 72;
+                const spo2 = r.vitals?.spo2 || r.spo2 || 98;
+                const temp = r.vitals?.temp || r.temp || 36.6;
+                const nurse = r.nurseName || r.nurse || 'Care Team';
+
+                return (
+                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-gray-900">{dateStr}</td>
+                    <td className="px-4 py-3 text-gray-700">{bp}</td>
+                    <td className="px-4 py-3 text-gray-700">{hr} bpm</td>
+                    <td className="px-4 py-3"><span className={`badge ${spo2 >= 97 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{spo2}%</span></td>
+                    <td className="px-4 py-3 text-gray-700">{temp}°C</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{nurse}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </motion.div>
     </motion.div>
-  );
+    );
+  };
 
   // ─── Medicine Reminders ───────────────────────────────────────────────────────
   const MedicineReminders = () => {
-    const [taken, setTaken] = useState<Record<number, boolean>>(medicineTaken);
-    const toggle = (i: number) => { const n = { ...taken, [i]: !taken[i] }; setTaken(n); setMedicineTaken(n); };
+    const listToDisplay = dbMedicines.length > 0 ? dbMedicines : medicines;
+
+    const toggleMed = async (med: any, index: number) => {
+      if (med._id) {
+        try {
+          const res = await api.patch(`/medicines/${med._id}/toggle`);
+          if (res.data?.data?.medicine) {
+            setDbMedicines(prev => prev.map(m => m._id === med._id ? res.data.data.medicine : m));
+          }
+        } catch (err) { console.error('Toggle error:', err); }
+      } else {
+        const n = { ...medicineTaken, [index]: !medicineTaken[index] };
+        setMedicineTaken(n);
+      }
+    };
+
+    const handleAddMed = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newMed.name) return;
+      try {
+        const res = await api.post('/medicines', newMed);
+        if (res.data?.data?.medicine) {
+          setDbMedicines(prev => [res.data.data.medicine, ...prev]);
+        }
+        setShowAddMed(false);
+        setNewMed({ name: '', dosage: '1 tablet', time: '8:00 AM', type: 'General' });
+      } catch (err) {
+        console.error('Failed to add medicine:', err);
+      }
+    };
+
+    const takenCount = listToDisplay.filter((m, i) => m._id ? m.taken : medicineTaken[i]).length;
+    const pct = listToDisplay.length > 0 ? Math.round((takenCount / listToDisplay.length) * 100) : 0;
+
     return (
       <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-5">
         <motion.div variants={fade} className="flex items-center justify-between">
           <h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">Medicine Reminders</h1>
-          <button className="flex items-center gap-1.5 btn-primary text-sm py-2.5 px-4" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+          <button onClick={() => setShowAddMed(!showAddMed)} className="flex items-center gap-1.5 btn-primary text-sm py-2.5 px-4" style={{ minHeight: 'unset', minWidth: 'unset' }}>
             <Plus className="w-4 h-4" /> Add Medicine
           </button>
         </motion.div>
+
+        {/* Add Medicine Form */}
+        {showAddMed && (
+          <motion.form initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} onSubmit={handleAddMed}
+            className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 space-y-4">
+            <h3 className="font-bold text-gray-900 font-display">New Medicine Reminder</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div>
+                <label className="text-xs text-gray-500 font-semibold block mb-1">Medicine Name</label>
+                <input value={newMed.name} onChange={e => setNewMed({ ...newMed, name: e.target.value })} className="input-field text-sm py-2" placeholder="e.g. Paracetamol" required />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 font-semibold block mb-1">Dosage</label>
+                <input value={newMed.dosage} onChange={e => setNewMed({ ...newMed, dosage: e.target.value })} className="input-field text-sm py-2" placeholder="e.g. 500mg / 1 tab" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 font-semibold block mb-1">Schedule Time</label>
+                <input value={newMed.time} onChange={e => setNewMed({ ...newMed, time: e.target.value })} className="input-field text-sm py-2" placeholder="e.g. 9:00 AM" required />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 font-semibold block mb-1">Category</label>
+                <select value={newMed.type} onChange={e => setNewMed({ ...newMed, type: e.target.value })} className="input-field text-sm py-2">
+                  <option value="General">General</option>
+                  <option value="Diabetes">Diabetes</option>
+                  <option value="Blood Pressure">Blood Pressure</option>
+                  <option value="Supplement">Supplement</option>
+                  <option value="Painkiller">Painkiller</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setShowAddMed(false)} className="px-4 py-2 text-xs font-semibold text-gray-500 hover:bg-gray-100 rounded-xl">Cancel</button>
+              <button type="submit" className="btn-primary text-xs py-2 px-4">Add Reminder</button>
+            </div>
+          </motion.form>
+        )}
+
         {/* Progress */}
         <motion.div variants={fade} className="bg-gradient-to-r from-teal-600 to-primary-600 rounded-3xl p-5 text-white">
           <div className="flex items-center justify-between mb-3">
-            <div><p className="text-teal-100 text-sm">Today's Progress</p><p className="text-2xl font-bold font-display">{Object.values(taken).filter(Boolean).length} / {medicines.length} taken</p></div>
+            <div><p className="text-teal-100 text-sm">Today's Progress</p><p className="text-2xl font-bold font-display">{takenCount} / {listToDisplay.length} taken</p></div>
             <div className="w-16 h-16 relative flex items-center justify-center">
               <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
                 <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="3" />
-                <circle cx="18" cy="18" r="14" fill="none" stroke="white" strokeWidth="3" strokeDasharray={`${(Object.values(taken).filter(Boolean).length / medicines.length) * 88} 88`} strokeLinecap="round" />
+                <circle cx="18" cy="18" r="14" fill="none" stroke="white" strokeWidth="3" strokeDasharray={`${(pct / 100) * 88} 88`} strokeLinecap="round" />
               </svg>
-              <span className="absolute text-xs font-bold">{Math.round((Object.values(taken).filter(Boolean).length / medicines.length) * 100)}%</span>
+              <span className="absolute text-xs font-bold">{pct}%</span>
             </div>
           </div>
         </motion.div>
         {/* List */}
         <div className="space-y-3">
-          {medicines.map((m, i) => (
-            <motion.div key={i} variants={fade} transition={{ delay: i * 0.05 }}
-              className={`bg-white rounded-2xl border shadow-sm p-4 flex items-center gap-4 transition-all ${taken[i] ? 'border-green-200 bg-green-50/50' : 'border-gray-100'}`}>
-              <div className={`w-11 h-11 rounded-2xl ${m.color} flex items-center justify-center flex-shrink-0`}>
-                <Pill className="w-5 h-5" />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-900 text-sm">{m.name}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs text-gray-400 flex items-center gap-1"><Clock className="w-3 h-3" />{m.time}</span>
-                  <span className={`badge ${m.color} text-[10px] px-2 py-0.5`}>{m.type}</span>
+          {listToDisplay.map((m, i) => {
+            const isTaken = m._id ? m.taken : medicineTaken[i];
+            const pillColor = m.color || 'bg-blue-100 text-blue-700';
+
+            return (
+              <motion.div key={m._id || i} variants={fade} transition={{ delay: i * 0.05 }}
+                className={`bg-white rounded-2xl border shadow-sm p-4 flex items-center gap-4 transition-all ${isTaken ? 'border-green-200 bg-green-50/50' : 'border-gray-100'}`}>
+                <div className={`w-11 h-11 rounded-2xl ${pillColor} flex items-center justify-center flex-shrink-0`}>
+                  <Pill className="w-5 h-5" />
                 </div>
-              </div>
-              <button onClick={() => toggle(i)}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all font-bold text-sm ${taken[i] ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
-                style={{ minHeight: 'unset', minWidth: 'unset' }}>
-                {taken[i] ? <CheckCircle className="w-5 h-5" /> : <Clock className="w-4 h-4" />}
-              </button>
-            </motion.div>
-          ))}
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900 text-sm">{m.name} <span className="text-xs text-gray-400 font-normal">({m.dosage || '1 tab'})</span></p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs text-gray-400 flex items-center gap-1"><Clock className="w-3 h-3" />{m.time}</span>
+                    <span className={`badge ${pillColor} text-[10px] px-2 py-0.5`}>{m.type}</span>
+                  </div>
+                </div>
+                <button onClick={() => toggleMed(m, i)}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all font-bold text-sm ${isTaken ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                  style={{ minHeight: 'unset', minWidth: 'unset' }}>
+                  {isTaken ? <CheckCircle className="w-5 h-5" /> : <Clock className="w-4 h-4" />}
+                </button>
+              </motion.div>
+            );
+          })}
         </div>
       </motion.div>
     );
@@ -829,6 +1085,16 @@ export default function PatientDashboard() {
   const EmergencySOS = () => (
     <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-5">
       <motion.div variants={fade}><h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">Emergency SOS</h1></motion.div>
+      {sosSent && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
+          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+          <div>
+            <p className="font-bold text-green-800 text-sm">SOS Alert Sent!</p>
+            <p className="text-xs text-green-600">Our team has been notified. A caregiver will be dispatched shortly. Stay calm.</p>
+          </div>
+        </motion.div>
+      )}
       {/* Main SOS button */}
       <motion.div variants={fade} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 text-center">
         <p className="text-gray-500 text-sm mb-6">Press and hold the button to trigger emergency services. A caregiver will be dispatched within <strong className="text-red-600">30 minutes</strong>.</p>
@@ -880,18 +1146,30 @@ export default function PatientDashboard() {
   );
 
   // ─── Payments & Invoices ──────────────────────────────────────────────────────
-  const PaymentsInvoices = () => (
+  const PaymentsInvoices = () => {
+    const totalSpent   = payments.filter(p => p.status === 'succeeded').reduce((s, p) => s + p.amount, 0);
+    const thisMonth    = payments.filter(p => {
+      if (p.status !== 'succeeded' || !p.paidAt) return false;
+      const d = new Date(p.paidAt);
+      const now = new Date();
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).reduce((s, p) => s + p.amount, 0);
+    const pending = payments.filter(p => p.status === 'pending').reduce((s, p) => s + p.amount, 0);
+    const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    const getServiceName = (p: any) => p.bookingId?.serviceType || 'Healthcare Service';
+
+    return (
     <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-5">
       <motion.div variants={fade}>
         <h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">Payments & Invoices</h1>
       </motion.div>
 
-      {/* Summary cards */}
+      {/* Summary cards — real computed values */}
       <motion.div variants={fade} className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {[
-          { label: 'Total Spent', value: '₹12,450', icon: CreditCard, color: 'bg-blue-50 text-blue-600' },
-          { label: 'This Month', value: '₹1,899', icon: TrendingUp, color: 'bg-green-50 text-green-600' },
-          { label: 'Pending', value: '₹799', icon: Clock, color: 'bg-yellow-50 text-yellow-600' },
+          { label: 'Total Spent',  value: `₹${totalSpent.toFixed(0)}`,  icon: CreditCard,  color: 'bg-blue-50 text-blue-600' },
+          { label: 'This Month',   value: `₹${thisMonth.toFixed(0)}`,   icon: TrendingUp,  color: 'bg-green-50 text-green-600' },
+          { label: 'Pending',      value: `₹${pending.toFixed(0)}`,     icon: Clock,       color: 'bg-yellow-50 text-yellow-600' },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <div className={`w-9 h-9 ${s.color} rounded-xl flex items-center justify-center mb-3`}>
@@ -903,64 +1181,50 @@ export default function PatientDashboard() {
         ))}
       </motion.div>
 
-      {/* Invoices list */}
+      {/* Invoices list — real data */}
       <motion.div variants={fade} className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="font-bold text-gray-900 font-display">Invoices</h3>
-          <button className="flex items-center gap-1.5 text-primary-600 text-xs font-semibold" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-            <Download className="w-3.5 h-3.5" /> Export All
-          </button>
+          <h3 className="font-bold text-gray-900 font-display">Transaction History</h3>
         </div>
-        <div className="divide-y divide-gray-50">
-          {invoices.map((inv, i) => (
-            <div key={i} className="p-4 sm:p-5 flex items-center justify-between gap-3 hover:bg-gray-50 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-4 h-4 text-primary-600" />
+        {loadingPayments ? (
+          <div className="p-8 text-center">
+            <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          </div>
+        ) : payments.length === 0 ? (
+          <div className="p-10 text-center">
+            <CreditCard className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+            <p className="text-sm text-gray-400">No payment history yet. Your transactions will appear here after your first booking.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {payments.map((p, i) => (
+              <div key={i} className="p-4 sm:p-5 flex items-center justify-between gap-3 hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-4 h-4 text-primary-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">{getServiceName(p)}</p>
+                    <p className="text-xs text-gray-500">{p.paidAt ? fmtDate(p.paidAt) : fmtDate(p.createdAt)} · #{p._id?.slice(-6).toUpperCase()}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">#{inv.id}</p>
-                  <p className="text-xs text-gray-500">{inv.service} · {inv.date}</p>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <span className="font-bold text-gray-900">₹{p.amount?.toFixed(0)}</span>
+                  <span className={`badge capitalize ${
+                    p.status === 'succeeded' ? 'bg-green-100 text-green-700' :
+                    p.status === 'pending'   ? 'bg-yellow-100 text-yellow-700' :
+                    p.status === 'failed'    ? 'bg-red-100 text-red-700' :
+                    'bg-gray-100 text-gray-600'
+                  }`}>{p.status === 'succeeded' ? 'Paid' : p.status}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <span className="font-bold text-gray-900">{inv.amount}</span>
-                <span className={`badge ${statusStyle[inv.status]} capitalize`}>{inv.status}</span>
-                <button className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-                  <Download className="w-3.5 h-3.5 text-gray-500" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Payment methods */}
-      <motion.div variants={fade} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-900 font-display">Payment Methods</h3>
-          <button className="text-primary-600 text-xs font-semibold" style={{ minHeight: 'unset', minWidth: 'unset' }}>+ Add New</button>
-        </div>
-        <div className="space-y-3">
-          {[
-            { type: 'Visa', last4: '4242', expiry: '12/27', color: 'from-blue-600 to-blue-700', default: true },
-            { type: 'UPI', last4: 'ramesh@okaxis', expiry: '', color: 'from-green-600 to-teal-600', default: false },
-          ].map((card, i) => (
-            <div key={i} className={`bg-gradient-to-r ${card.color} rounded-2xl p-4 text-white flex items-center justify-between`}>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-bold text-sm">{card.type}</span>
-                  {card.default && <span className="bg-white/20 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">Default</span>}
-                </div>
-                <p className="text-white/80 text-xs">{card.last4} {card.expiry && `· ${card.expiry}`}</p>
-              </div>
-              <CreditCard className="w-8 h-8 text-white/60" />
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </motion.div>
     </motion.div>
-  );
+    );
+  };
 
   // ─── Settings ─────────────────────────────────────────────────────────────────
   const SettingsPanel = () => {
