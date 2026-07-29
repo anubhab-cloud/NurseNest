@@ -166,27 +166,72 @@ export default function Home() {
               </motion.div>
             </motion.div>
 
-            {/* Right — 3D Nurse Model */}
-            <motion.div className="col-span-12 lg:col-span-5 lg:col-start-8 hidden lg:flex items-center justify-center"
-              initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-              <div className="relative w-full">
+            {/* Right — 3D Nurse Model on Desktop / Mobile Live Status Card on Mobile */}
+            <motion.div className="col-span-12 lg:col-span-5 lg:col-start-8 mt-8 lg:mt-0 flex items-center justify-center"
+              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}>
+              <div className="relative w-full max-w-md lg:max-w-none">
                 {/* Background pill glow */}
-                <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-[380px] rounded-3xl opacity-15 blur-2xl"
+                <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 h-[300px] sm:h-[380px] rounded-3xl opacity-20 blur-3xl pointer-events-none"
                   style={{ background: 'linear-gradient(135deg, #2563EB, #14B8A6)' }} />
 
-                {/* 3D Model */}
-                <Suspense fallback={
-                  <div className="flex items-center justify-center h-[480px]">
-                    <div className="w-12 h-12 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin" />
-                  </div>
-                }>
-                  <NurseModel height={480} interactive />
-                </Suspense>
+                {/* Desktop 3D Model */}
+                <div className="hidden lg:block">
+                  <Suspense fallback={
+                    <div className="flex items-center justify-center h-[480px]">
+                      <div className="w-12 h-12 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin" />
+                    </div>
+                  }>
+                    <NurseModel height={480} interactive />
+                  </Suspense>
+                </div>
 
-                {/* Floating badge — arriving */}
+                {/* Mobile & Tablet Interactive Live Caregiver Card */}
+                <div className="lg:hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 rounded-3xl p-5 shadow-xl shadow-slate-900/10 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Live Healthcare Status</span>
+                    </div>
+                    <span className="bg-emerald-50 text-emerald-700 text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-emerald-200/60">
+                      ACTIVE NEAR YOU
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-blue-50/70 border border-blue-100 rounded-2xl p-3 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
+                        ⚡
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-500 font-semibold uppercase">Response</p>
+                        <p className="text-xs font-extrabold text-slate-900">In 28 Mins</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-teal-50/70 border border-teal-100 rounded-2xl p-3 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-teal-500 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
+                        ⭐
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-500 font-semibold uppercase">Rating</p>
+                        <p className="text-xs font-extrabold text-slate-900">4.9 / 5.0 (10k+)</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-slate-50 border border-slate-200/60 rounded-2xl p-3 text-xs">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span className="font-semibold text-slate-700">100% NABH & Police Verified</span>
+                    </div>
+                    <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                  </div>
+                </div>
+
+                {/* Floating badge — arriving (Desktop) */}
                 <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                  className="absolute left-0 bottom-28 card px-4 py-3 flex items-center gap-3"
+                  className="hidden lg:flex absolute left-0 bottom-28 card px-4 py-3 items-center gap-3"
                   style={{ width: '196px', boxShadow: 'var(--shadow-2)' }}>
                   <div className="icon-box-md" style={{ background: '#ECFDF5' }}>
                     <Navigation className="w-4 h-4 text-green-600" />
@@ -197,9 +242,9 @@ export default function Home() {
                   </div>
                 </motion.div>
 
-                {/* Floating badge — rating */}
+                {/* Floating badge — rating (Desktop) */}
                 <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
-                  className="absolute right-0 bottom-16 card px-4 py-3 flex items-center gap-3"
+                  className="hidden lg:flex absolute right-0 bottom-16 card px-4 py-3 items-center gap-3"
                   style={{ width: '180px', boxShadow: 'var(--shadow-2)' }}>
                   <div className="icon-box-md" style={{ background: '#FFFBEB' }}>
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
@@ -207,17 +252,6 @@ export default function Home() {
                   <div>
                     <p className="text-micro">Avg. Rating</p>
                     <p className="font-bold text-gray-900 text-sm">4.9 / 5.0 ⭐</p>
-                  </div>
-                </motion.div>
-
-                {/* Floating badge — verified */}
-                <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
-                  className="absolute right-4 top-16 card px-3 py-2.5 flex items-center gap-2.5"
-                  style={{ boxShadow: 'var(--shadow-2)' }}>
-                  <CheckCircle className="w-4 h-4 text-teal-500 flex-shrink-0" />
-                  <div>
-                    <p className="text-micro leading-tight">Certified &</p>
-                    <p className="font-semibold text-gray-900 text-xs">Background Verified</p>
                   </div>
                 </motion.div>
               </div>
@@ -234,19 +268,25 @@ export default function Home() {
       </section>
 
       {/* ══ STATS BAR ══════════════════════════════════════════════════════ */}
-      <section className="py-16" style={{ background: 'linear-gradient(135deg, #1D77F2 0%, #14B8A4 100%)' }}>
+      <section className="py-12 sm:py-16" style={{ background: 'linear-gradient(135deg, #1D77F2 0%, #14B8A4 100%)' }}>
         <div className="container">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
             {STATS.map((s, i) => (
-              <motion.div key={s.label} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} className="text-center">
-                <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center mx-auto mb-3">
-                  <s.icon className="w-6 h-6 text-white" />
+              <motion.div 
+                key={s.label} 
+                initial={{ opacity: 0, y: 20 }} 
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} 
+                transition={{ delay: i * 0.08, duration: 0.4 }} 
+                className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 sm:p-6 text-center"
+              >
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/20 flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                  <s.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <p className="text-4xl font-extrabold font-display text-white mb-1 tracking-tight">
+                <p className="text-2xl sm:text-4xl font-extrabold font-display text-white mb-1 tracking-tight">
                   <Counter end={s.end} suffix={s.suffix} />
                 </p>
-                <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>{s.label}</p>
+                <p className="text-xs sm:text-sm font-medium text-white/80">{s.label}</p>
               </motion.div>
             ))}
           </div>
@@ -256,13 +296,13 @@ export default function Home() {
       {/* ══ SERVICES ═══════════════════════════════════════════════════════ */}
       <section className="section bg-white">
         <div className="container">
-          <div className="section-header">
+          <div className="section-header mb-8 sm:mb-16">
             <span className="eyebrow">What We Offer</span>
             <h2>Our <span className="text-gradient">Healthcare Services</span></h2>
-            <p>Comprehensive home healthcare delivered by certified professionals.</p>
+            <p className="text-sm sm:text-base">Comprehensive home healthcare delivered by certified professionals.</p>
           </div>
 
-          {/* Desktop grid */}
+          {/* Desktop & Tablet grid */}
           <div className="card-grid-4 hidden sm:grid">
             {SERVICES.map((s, i) => (
               <motion.div key={s.title} className="card"
@@ -294,21 +334,39 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Mobile horizontal snap */}
-          <div className="snap-x sm:hidden pb-4 -mx-6 px-6">
-            {SERVICES.map((s, i) => (
-              <div key={s.title} className="snap-start card" style={{ width: '260px' }}>
-                <div className="card-body">
-                  <div className="icon-box-xl mb-4" style={{ background: '#F5F5F5', fontSize: '24px' }}>{s.emoji}</div>
-                  <span className="eyebrow mb-2 block">{s.category}</span>
-                  <h4 className="text-gray-900 mb-2">{s.title}</h4>
-                  <p className="text-muted truncate-3 text-xs">{s.desc}</p>
+          {/* Mobile Swipe Container with Peek Preview */}
+          <div className="sm:hidden flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4">
+            {SERVICES.map((s) => (
+              <div 
+                key={s.title} 
+                className="snap-center w-[82vw] shrink-0 bg-slate-50 border border-slate-200/80 rounded-3xl p-5 flex flex-col justify-between shadow-sm"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-3xl">{s.emoji}</span>
+                    <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                      {s.category}
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-slate-900 text-base mb-1.5">{s.title}</h3>
+                  <p className="text-xs text-slate-600 line-clamp-3 mb-4 leading-relaxed">{s.desc}</p>
+                  
+                  <div className="space-y-1.5 mb-4">
+                    {s.features.slice(0, 2).map(f => (
+                      <div key={f} className="flex items-center gap-1.5 text-[11px] text-slate-700 font-medium">
+                        <CheckCircle className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+                        <span>{f}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="card-footer">
-                  <Link to="/services" className="flex items-center gap-1 text-xs font-semibold text-blue-600" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-                    Learn More <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
+
+                <Link 
+                  to="/services" 
+                  className="w-full flex items-center justify-center gap-1.5 bg-white border border-slate-200 text-blue-600 text-xs font-bold py-2.5 rounded-xl shadow-xs active:bg-blue-50 transition-colors"
+                >
+                  Explore Details <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
             ))}
           </div>
