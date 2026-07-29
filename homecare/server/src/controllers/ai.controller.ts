@@ -57,34 +57,59 @@ export const chat = async (req: Request, res: Response): Promise<void> => {
     const userId = (req as any).user?.userId || sessionId || 'anonymous';
 
     const client = getGenAI();
-    const model = client.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      systemInstruction: SYSTEM_PROMPT,
-      safetySettings: [
-        { category: HarmCategory.HARM_CATEGORY_HARASSMENT,        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-        { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,       threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-        { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-        { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-      ],
-    });
+
+    // Available model candidate names in order of preference
+    const candidateModels = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro', 'gemini-pro', 'gemini-1.5-flash'];
+    let result: any = null;
+    let responseText = '';
 
     // Get or init conversation history for this user
     const history = conversationHistories.get(userId) || [];
 
-    const chat = model.startChat({ history });
-    const result = await chat.sendMessage(message.trim());
-    const response = result.response.text();
+    let lastError: any = null;
+    for (const modelName of candidateModels) {
+      try {
+        const model = client.getGenerativeModel({
+          model: modelName,
+          systemInstruction: SYSTEM_PROMPT,
+          safetySettings: [
+            { category: HarmCategory.HARM_CATEGORY_HARASSMENT,        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+            { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,       threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+            { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+            { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+          ],
+        });
+
+        const chatSession = model.startChat({ history });
+        result = await chatSession.sendMessage(message.trim());
+        responseText = result.response.text();
+        if (responseText) {
+          break; // Success!
+        }
+      } catch (err: any) {
+        lastError = err;
+        // If 404/not found, try next candidate model
+        if (err?.message?.includes('404') || err?.message?.includes('not found')) {
+          continue;
+        }
+        throw err; // Other errors (e.g. auth/quota) throw immediately
+      }
+    }
+
+    if (!responseText && lastError) {
+      throw lastError;
+    }
 
     // Update history (keep last 20 turns to avoid token overflow)
     history.push({ role: 'user',  parts: [{ text: message.trim() }] });
-    history.push({ role: 'model', parts: [{ text: response }] });
+    history.push({ role: 'model', parts: [{ text: responseText }] });
     if (history.length > 40) history.splice(0, 2); // remove oldest pair
     conversationHistories.set(userId, history);
 
     res.json({
       success: true,
       data: {
-        reply: response,
+        reply: responseText,
         sessionId: userId,
       },
     });
