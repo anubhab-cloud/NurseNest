@@ -124,7 +124,7 @@ class NotificationService {
       const response = await firebaseAdmin.messaging().sendEachForMulticast(message);
 
       // Deactivate failed tokens
-      response.responses.forEach((resp, idx) => {
+      response.responses.forEach((resp: any, idx: number) => {
         if (!resp.success && resp.error?.code === 'messaging/registration-token-not-registered') {
           DeviceToken.findOneAndUpdate(
             { token: tokens[idx] },

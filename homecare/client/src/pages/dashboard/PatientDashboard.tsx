@@ -119,6 +119,10 @@ export default function PatientDashboard() {
   const [videoCallActive, setVideoCallActive] = useState(false);
   const [activeCallBookingId, setActiveCallBookingId] = useState<string>('demo');
 
+  // UI state & refs
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [medicineTaken, setMedicineTaken] = useState<Record<number, boolean>>({});
+
 
   useEffect(() => {
     api.get('/bookings/my')
