@@ -240,7 +240,7 @@ export default function PatientDashboard() {
   const navTo = (key: string) => { setActive(key); setSideOpen(false); };
 
   // ─── Sidebar ──────────────────────────────────────────────────────────────────
-  const Sidebar = () => (
+  const renderSidebar = () => (
     <aside className="flex flex-col h-full bg-white">
       {/* Logo */}
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
@@ -303,7 +303,7 @@ export default function PatientDashboard() {
   );
 
   // ─── Overview ────────────────────────────────────────────────────────────────
-  const Overview = () => {
+  const renderOverview = () => {
     const isNewUser = realBookings.length === 0 && !useDemoData;
     const activeAppointments = isNewUser ? [] : appointments;
     const hour = new Date().getHours();
@@ -479,7 +479,7 @@ export default function PatientDashboard() {
 };
 
   // ─── Appointments ─────────────────────────────────────────────────────────────
-  const Appointments = () => {
+  const renderAppointments = () => {
     const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
     const formatTime = (t: string) => t || '';
     const getNurseInitials = (b: any) => {
@@ -581,7 +581,7 @@ export default function PatientDashboard() {
   };
 
   // ─── Live Tracking ────────────────────────────────────────────────────────────
-  const LiveTracking = () => (
+  const renderLiveTracking = () => (
     <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-5">
         <motion.div variants={fade}><h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">Live Caregiver Tracking</h1></motion.div>
         {/* Map placeholder */}
@@ -646,7 +646,7 @@ export default function PatientDashboard() {
     );
 
   // ─── Health Records ───────────────────────────────────────────────────────────
-  const HealthRecords = () => {
+  const renderHealthRecords = () => {
     const recordsToDisplay = dbHealthRecords.length > 0 ? dbHealthRecords : healthRecords;
 
     const handleAddVitals = async (e: React.FormEvent) => {
@@ -777,7 +777,7 @@ export default function PatientDashboard() {
   };
 
   // ─── Medicine Reminders ───────────────────────────────────────────────────────
-  const MedicineReminders = () => {
+  const renderMedicineReminders = () => {
     const listToDisplay = dbMedicines.length > 0 ? dbMedicines : medicines;
 
     const toggleMed = async (med: any, index: number) => {
@@ -903,7 +903,7 @@ export default function PatientDashboard() {
   };
 
   // ─── Video Consultations ──────────────────────────────────────────────────────
-  const VideoConsultations = () => (
+  const renderVideoConsultations = () => (
     <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-5">
       <motion.div variants={fade}><h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">Video Consultations</h1></motion.div>
       {!videoCallActive ? (
@@ -954,7 +954,7 @@ export default function PatientDashboard() {
   );
 
   // ─── Family Monitoring ────────────────────────────────────────────────────────
-  const FamilyMonitoring = () => (
+  const renderFamilyMonitoring = () => (
     <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-5">
       <motion.div variants={fade} className="flex items-center justify-between">
         <h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">Family Monitoring</h1>
@@ -999,7 +999,7 @@ export default function PatientDashboard() {
   );
 
   // ─── AI Health Assistant ──────────────────────────────────────────────────────
-  const AIAssistant = () => (
+  const renderAIAssistant = () => (
     <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-4 h-full flex flex-col">
       <motion.div variants={fade} className="flex items-center justify-between">
         <div>
@@ -1068,7 +1068,7 @@ export default function PatientDashboard() {
   );
 
   // ─── Emergency SOS ────────────────────────────────────────────────────────────
-  const EmergencySOS = () => (
+  const renderEmergencySOS = () => (
     <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-5">
       <motion.div variants={fade}><h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">Emergency SOS</h1></motion.div>
       {sosSent && (
@@ -1132,7 +1132,7 @@ export default function PatientDashboard() {
   );
 
   // ─── Payments & Invoices ──────────────────────────────────────────────────────
-  const PaymentsInvoices = () => {
+  const renderPaymentsInvoices = () => {
     const totalSpent   = payments.filter(p => p.status === 'succeeded').reduce((s, p) => s + p.amount, 0);
     const thisMonth    = payments.filter(p => {
       if (p.status !== 'succeeded' || !p.paidAt) return false;
@@ -1213,7 +1213,7 @@ export default function PatientDashboard() {
   };
 
   // ─── Settings ─────────────────────────────────────────────────────────────────
-  const SettingsPanel = () => {
+  const renderSettingsPanel = () => {
     const [notifs, setNotifs] = useState({ appointments: true, medicines: true, tracking: true, promotions: false });
     const [profile, setProfile] = useState({ firstName: user?.firstName || '', lastName: user?.lastName || '', email: user?.email || '', phone: '' });
     return (
@@ -1326,18 +1326,18 @@ export default function PatientDashboard() {
   // ─── Section renderer ─────────────────────────────────────────────────────────
   const renderSection = () => {
     switch (active) {
-      case 'overview':     return <Overview />;
-      case 'appointments': return <Appointments />;
-      case 'tracking':     return <LiveTracking />;
-      case 'health':       return <HealthRecords />;
-      case 'medicines':    return <MedicineReminders />;
-      case 'video':        return <VideoConsultations />;
-      case 'family':       return <FamilyMonitoring />;
-      case 'ai':           return <AIAssistant />;
-      case 'sos':          return <EmergencySOS />;
-      case 'payments':     return <PaymentsInvoices />;
-      case 'settings':     return <SettingsPanel />;
-      default:             return <Overview />;
+      case 'overview':     return renderOverview();
+      case 'appointments': return renderAppointments();
+      case 'tracking':     return renderLiveTracking();
+      case 'health':       return renderHealthRecords();
+      case 'medicines':    return renderMedicineReminders();
+      case 'video':        return renderVideoConsultations();
+      case 'family':       return renderFamilyMonitoring();
+      case 'ai':           return renderAIAssistant();
+      case 'sos':          return renderEmergencySOS();
+      case 'payments':     return renderPaymentsInvoices();
+      case 'settings':     return renderSettingsPanel();
+      default:             return renderOverview();
     }
   };
 
@@ -1356,7 +1356,7 @@ export default function PatientDashboard() {
 
       {/* ── Desktop sidebar (fixed) ── */}
       <div className="hidden lg:block fixed top-0 left-0 bottom-0 w-64 border-r border-gray-100 shadow-sm z-30">
-        <Sidebar />
+        {renderSidebar()}
       </div>
 
       {/* ── Mobile drawer overlay ── */}
@@ -1369,7 +1369,7 @@ export default function PatientDashboard() {
             <motion.div initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
               className="fixed top-0 left-0 bottom-0 w-72 z-50 lg:hidden shadow-2xl border-r border-gray-100">
-              <Sidebar />
+              {renderSidebar()}
             </motion.div>
           </>
         )}
