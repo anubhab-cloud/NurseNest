@@ -123,6 +123,39 @@ export default function PatientDashboard() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [medicineTaken, setMedicineTaken] = useState<Record<number, boolean>>({});
 
+  // Settings state
+  const [notifs, setNotifs] = useState({ appointments: true, medicines: true, tracking: true, promotions: false });
+  const [profile, setProfile] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    email: user?.email || '',
+    phone: (user as any)?.phone || '',
+  });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Password change state
+  const [showChangePass, setShowChangePass] = useState(false);
+  const [passData, setPassData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [changingPass, setChangingPass] = useState(false);
+  const [passMsg, setPassMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Deactivation state
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
+
+  // Keep profile form synced with authenticated user object
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: (user as any)?.phone || '',
+      });
+    }
+  }, [user]);
+
 
   useEffect(() => {
     api.get('/bookings/my')
@@ -1214,26 +1247,6 @@ export default function PatientDashboard() {
 
   // ─── Settings ─────────────────────────────────────────────────────────────────
   const renderSettingsPanel = () => {
-    const [notifs, setNotifs] = useState({ appointments: true, medicines: true, tracking: true, promotions: false });
-    const [profile, setProfile] = useState({
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      email: user?.email || '',
-      phone: (user as any)?.phone || '',
-    });
-    const [savingProfile, setSavingProfile] = useState(false);
-    const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-    // Password change state
-    const [showChangePass, setShowChangePass] = useState(false);
-    const [passData, setPassData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    const [changingPass, setChangingPass] = useState(false);
-    const [passMsg, setPassMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-    // Deactivation state
-    const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
-    const [deactivating, setDeactivating] = useState(false);
-
     const handleSaveProfile = async (e: React.FormEvent) => {
       e.preventDefault();
       setSavingProfile(true);
