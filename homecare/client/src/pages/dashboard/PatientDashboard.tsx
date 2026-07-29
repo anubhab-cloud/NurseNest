@@ -9,7 +9,7 @@ import {
   TrendingUp, Shield, Download, RefreshCw, Navigation,
   MessageSquare, User, Home, Package
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, api } from '../../context/AuthContext';
 import NurseNestLogo from '../../components/brand/NurseNestLogo';
 
 // ─── Mock Data ─────────────────────────────────────────────────────────────────
@@ -97,11 +97,28 @@ export default function PatientDashboard() {
   const [aiLoading, setAiLoading]   = useState(false);
   const [sosActive, setSosActive]   = useState(false);
   const [sosTimer, setSosTimer]     = useState(5);
-  const [medicineTaken, setMedicineTaken] = useState<Record<number, boolean>>({ 0: true, 1: true });
-  const [videoCallActive, setVideoCallActive] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const [realBookings, setRealBookings]       = useState<any[]>([]);
+  const [loadingBookings, setLoadingBookings] = useState(true);
+  const [useDemoData, setUseDemoData]         = useState(false);
+  const [trackingProgress, setTrackingProgress] = useState(62);
+
+  useEffect(() => {
+    api.get('/bookings/my')
+      .then(r => {
+        if (r.data?.data?.bookings) {
+          setRealBookings(r.data.data.bookings);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingBookings(false));
+  }, []);
+
+  useEffect(() => {
+    if (active === 'tracking') {
+      const t = setInterval(() => setTrackingProgress(p => Math.min(p + 1, 95)), 3000);
+      return () => clearInterval(t);
+    }
+  }, [active]);
 
   // Close sidebar on route tab change (mobile)
   useEffect(() => { setSideOpen(false); }, [active]);
@@ -200,62 +217,99 @@ export default function PatientDashboard() {
   );
 
   // ─── Overview ────────────────────────────────────────────────────────────────
-  const Overview = () => (
-    <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-6">
-      {/* Header */}
-      <motion.div variants={fade} className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">{greeting}, {user?.firstName}! 👋</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Here's your health overview for today.</p>
-        </div>
-        <Link to="/booking" className="btn-primary flex items-center gap-2 py-2.5 px-4 text-sm" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-          <Plus className="w-4 h-4" /> Book Service
-        </Link>
-      </motion.div>
+  const Overview = () => {
+    const isNewUser = realBookings.length === 0 && !useDemoData;
+    const activeAppointments = isNewUser ? [] : appointments;
 
-      {/* Stats */}
-      <motion.div variants={fade} className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {[
-          { label: 'Total Bookings', value: '12', icon: Calendar, color: 'bg-blue-50 text-blue-600', trend: '+2 this month' },
-          { label: 'Next Visit', value: 'Today 9AM', icon: Clock, color: 'bg-green-50 text-green-600', trend: 'Dr. Priya Nair' },
-          { label: 'Health Score', value: '92/100', icon: Activity, color: 'bg-teal-50 text-teal-600', trend: '↑ 3pts this week' },
-          { label: 'Loyalty Points', value: '450 pts', icon: Star, color: 'bg-purple-50 text-purple-600', trend: '₹45 cashback' },
-        ].map(s => (
-          <div key={s.label} className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm">
-            <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${s.color} flex items-center justify-center mb-3`}>
-              <s.icon className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div className="text-lg sm:text-2xl font-bold font-display text-gray-900 leading-tight">{s.value}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
-            <div className="text-[10px] text-gray-400 mt-1">{s.trend}</div>
+    return (
+      <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-6">
+        {/* Header */}
+        <motion.div variants={fade} className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">{greeting}, {user?.firstName}! 👋</h1>
+            <p className="text-gray-500 text-sm mt-0.5">
+              {isNewUser ? "Welcome to HomeCare+! Your account is verified and ready." : "Here's your health overview for today."}
+            </p>
           </div>
-        ))}
-      </motion.div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setUseDemoData(v => !v)}
+              className="text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              {useDemoData ? '📋 View My Real Account' : '👁️ Preview Demo Data'}
+            </button>
+            <Link to="/booking" className="btn-primary flex items-center gap-2 py-2.5 px-4 text-sm" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+              <Plus className="w-4 h-4" /> Book Service
+            </Link>
+          </div>
+        </motion.div>
 
-      {/* Next appointment banner */}
-      <motion.div variants={fade} className="bg-gradient-to-r from-primary-600 to-teal-600 rounded-3xl p-5 sm:p-6 text-white">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-xl">👨‍⚕️</div>
-            <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse" />
-                <span className="text-primary-100 text-xs font-semibold uppercase tracking-wide">Next Appointment — TODAY</span>
+        {/* Stats */}
+        <motion.div variants={fade} className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {[
+            { label: 'Total Bookings', value: isNewUser ? '0' : '12', icon: Calendar, color: 'bg-blue-50 text-blue-600', trend: isNewUser ? 'Account active' : '+2 this month' },
+            { label: 'Next Visit', value: isNewUser ? 'None' : 'Today 9AM', icon: Clock, color: 'bg-green-50 text-green-600', trend: isNewUser ? 'Book anytime' : 'Dr. Priya Nair' },
+            { label: 'Health Score', value: isNewUser ? '100/100' : '92/100', icon: Activity, color: 'bg-teal-50 text-teal-600', trend: isNewUser ? 'Account setup' : '↑ 3pts this week' },
+            { label: 'Welcome Points', value: isNewUser ? '100 pts' : '450 pts', icon: Star, color: 'bg-purple-50 text-purple-600', trend: 'Welcome bonus' },
+          ].map(s => (
+            <div key={s.label} className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm">
+              <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${s.color} flex items-center justify-center mb-3`}>
+                <s.icon className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <p className="font-bold text-white text-lg font-display">Dr. Priya Nair · Elder Care</p>
-              <p className="text-primary-100 text-sm">9:00 AM · Arriving in 28 mins</p>
+              <div className="text-lg sm:text-2xl font-bold font-display text-gray-900 leading-tight">{s.value}</div>
+              <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
+              <div className="text-[10px] text-gray-400 mt-1">{s.trend}</div>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => navTo('tracking')} className="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-1.5" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-              <Navigation className="w-3.5 h-3.5" /> Track
-            </button>
-            <button className="bg-white text-primary-700 text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-primary-50 transition-colors flex items-center gap-1.5" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-              <Phone className="w-3.5 h-3.5" /> Call
-            </button>
-          </div>
-        </div>
-      </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Next appointment banner or New user welcome banner */}
+        {isNewUser ? (
+          <motion.div variants={fade} className="bg-gradient-to-r from-blue-600 via-teal-600 to-emerald-600 rounded-3xl p-6 text-white shadow-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-full text-xs font-semibold mb-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+                  New Account Ready
+                </div>
+                <h2 className="text-xl font-bold font-display">Schedule Your First Home Care Visit</h2>
+                <p className="text-blue-100 text-sm max-w-xl mt-1">
+                  Connect with certified ICU nurses, elder care specialists, or physiotherapists directly at your doorstep.
+                </p>
+              </div>
+              <Link 
+                to="/booking"
+                className="bg-white text-blue-700 font-extrabold text-xs uppercase tracking-wider px-6 py-3.5 rounded-full shadow-md hover:bg-blue-50 transition-colors shrink-0"
+              >
+                Book Free Consultation
+              </Link>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div variants={fade} className="bg-gradient-to-r from-primary-600 to-teal-600 rounded-3xl p-5 sm:p-6 text-white">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-xl">👨‍⚕️</div>
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse" />
+                    <span className="text-primary-100 text-xs font-semibold uppercase tracking-wide">Next Appointment — TODAY</span>
+                  </div>
+                  <p className="font-bold text-white text-lg font-display">Dr. Priya Nair · Elder Care</p>
+                  <p className="text-primary-100 text-sm">9:00 AM · Arriving in 28 mins</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => navTo('tracking')} className="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-1.5" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+                  <Navigation className="w-3.5 h-3.5" /> Track
+                </button>
+                <button className="bg-white text-primary-700 text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-primary-50 transition-colors flex items-center gap-1.5" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+                  <Phone className="w-3.5 h-3.5" /> Call
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
       {/* Medicine & Recent rows */}
       <div className="grid lg:grid-cols-2 gap-4">
@@ -334,6 +388,7 @@ export default function PatientDashboard() {
       </motion.div>
     </motion.div>
   );
+};
 
   // ─── Appointments ─────────────────────────────────────────────────────────────
   const Appointments = () => (
@@ -394,11 +449,8 @@ export default function PatientDashboard() {
   );
 
   // ─── Live Tracking ────────────────────────────────────────────────────────────
-  const LiveTracking = () => {
-    const [progress, setProgress] = useState(62);
-    useEffect(() => { const t = setInterval(() => setProgress(p => Math.min(p + 1, 95)), 3000); return () => clearInterval(t); }, []);
-    return (
-      <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-5">
+  const LiveTracking = () => (
+    <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-5">
         <motion.div variants={fade}><h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">Live Caregiver Tracking</h1></motion.div>
         {/* Map placeholder */}
         <motion.div variants={fade} className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
@@ -438,7 +490,7 @@ export default function PatientDashboard() {
               </div>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2 mb-4">
-              <motion.div animate={{ width: `${progress}%` }} transition={{ duration: 1 }} className="bg-gradient-to-r from-primary-500 to-teal-500 h-2 rounded-full" />
+              <motion.div animate={{ width: `${trackingProgress}%` }} transition={{ duration: 1 }} className="bg-gradient-to-r from-primary-500 to-teal-500 h-2 rounded-full" />
             </div>
             <div className="grid grid-cols-3 gap-3">
               {[['Distance', '3.2 km'], ['Speed', '28 km/h'], ['Route', 'Optimal']].map(([l, v]) => (
@@ -460,7 +512,6 @@ export default function PatientDashboard() {
         </motion.div>
       </motion.div>
     );
-  };
 
   // ─── Health Records ───────────────────────────────────────────────────────────
   const HealthRecords = () => (
