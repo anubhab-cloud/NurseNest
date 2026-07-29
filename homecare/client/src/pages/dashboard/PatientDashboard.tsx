@@ -58,14 +58,8 @@ const statusStyle: Record<string, string> = {
   good: 'bg-green-100 text-green-700',
 };
 
-const aiResponses: Record<string, string> = {
-  'headache':     "Headaches can have many causes. Stay hydrated and rest. If it persists over 2 days or is severe, I recommend a doctor consultation. Should I book one for you? 💊",
-  'fever':        "A temperature above 38°C (100.4°F) is a fever. Stay hydrated, rest, and take paracetamol if needed. If above 39°C or lasting more than 3 days, please see a doctor. Shall I book an emergency home visit? 🌡️",
-  'bp':           "Your last recorded BP was 120/80 mmHg (Jun 17) — that's in the normal range! ✅ Remember to take your Amlodipine at 8 AM. Regular monitoring is key.",
-  'medicines':    "You have 3 medicines due today: ✅ Metformin & Amlodipine taken this morning. ⏰ Vitamin D3 at 12 PM and Atorvastatin + Aspirin at 9 PM are pending.",
-  'appointment':  "Your next appointment is Today at 9:00 AM — Dr. Priya Nair for Elder Care. She's 28 minutes away! 📍 I'll notify you when she's 10 minutes out.",
-  'default':      "I'm your AI Health Assistant! I can help you with:\n• Medicine reminders 💊\n• Health record summaries 📋\n• Appointment info 📅\n• Symptom guidance 🩺\n\nWhat would you like to know?",
-};
+// (aiResponses removed — now powered by real Gemini AI via /api/v1/ai/chat)
+
 
 // ─── Sidebar nav items ─────────────────────────────────────────────────────────
 const navItems = [
@@ -140,15 +134,29 @@ export default function PatientDashboard() {
     return () => clearTimeout(t);
   }, [sosActive, sosTimer]);
 
-  const sendAI = () => {
-    const q = aiInput.trim(); if (!q) return;
+  const sendAI = async () => {
+    const q = aiInput.trim();
+    if (!q || aiLoading) return;
     setAiMessages(m => [...m, { role: 'user', text: q }]);
-    setAiInput(''); setAiLoading(true);
-    setTimeout(() => {
-      const key = Object.keys(aiResponses).find(k => q.toLowerCase().includes(k)) || 'default';
-      setAiMessages(m => [...m, { role: 'bot', text: aiResponses[key] }]);
+    setAiInput('');
+    setAiLoading(true);
+    try {
+      const res = await api.post('/ai/chat', { message: q });
+      const reply = res.data?.data?.reply || 'Sorry, I could not generate a response. Please try again.';
+      setAiMessages(m => [...m, { role: 'bot', text: reply }]);
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.message || 'AI service is temporarily unavailable. Please try again in a moment.';
+      setAiMessages(m => [...m, { role: 'bot', text: `⚠️ ${errMsg}` }]);
+    } finally {
       setAiLoading(false);
-    }, 900);
+    }
+  };
+
+  const clearAIChat = async () => {
+    try {
+      await api.delete('/ai/chat/clear');
+    } catch { /* silently ignore */ }
+    setAiMessages([{ role: 'bot', text: "Hi! I'm your NurseNest AI Health Assistant powered by Google Gemini. How can I help you today? 👋" }]);
   };
 
   const navTo = (key: string) => { setActive(key); setSideOpen(false); };
@@ -751,9 +759,22 @@ export default function PatientDashboard() {
   // ─── AI Health Assistant ──────────────────────────────────────────────────────
   const AIAssistant = () => (
     <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-4 h-full flex flex-col">
-      <motion.div variants={fade}><h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">AI Health Assistant</h1></motion.div>
+      <motion.div variants={fade} className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">AI Health Assistant</h1>
+          <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full inline-block" />
+            Powered by Google Gemini 1.5 Flash
+          </p>
+        </div>
+        <button onClick={clearAIChat}
+          className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 px-3 py-1.5 rounded-xl hover:bg-gray-50 transition-colors"
+          style={{ minHeight: 'unset', minWidth: 'unset' }}>
+          Clear Chat
+        </button>
+      </motion.div>
       <motion.div variants={fade} className="flex gap-2 flex-wrap">
-        {['What are my medicines?', 'Show my BP', 'Next appointment', 'I have a fever'].map(s => (
+        {['I have a headache', 'Check my symptoms', 'Medicine side effects', 'Post-surgery care tips'].map(s => (
           <button key={s} onClick={() => { setAiInput(s); setTimeout(() => sendAI(), 100); }}
             className="bg-primary-50 text-primary-700 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
             style={{ minHeight: 'unset', minWidth: 'unset' }}>
@@ -765,9 +786,9 @@ export default function PatientDashboard() {
       <motion.div variants={fade} className="flex-1 bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col overflow-hidden" style={{ minHeight: '400px', maxHeight: '520px' }}>
         <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3 bg-gradient-to-r from-primary-600 to-teal-600">
           <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center"><Bot className="w-5 h-5 text-white" /></div>
-          <div>
-            <p className="font-bold text-white text-sm">HomeCare AI</p>
-            <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 bg-green-300 rounded-full animate-pulse" /><span className="text-primary-100 text-xs">Always available</span></div>
+          <div className="flex-1">
+            <p className="font-bold text-white text-sm">NurseNest AI</p>
+            <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 bg-green-300 rounded-full animate-pulse" /><span className="text-primary-100 text-xs">Gemini · Always available</span></div>
           </div>
         </div>
         {/* Messages */}
@@ -781,8 +802,9 @@ export default function PatientDashboard() {
           ))}
           {aiLoading && (
             <div className="flex justify-start">
-              <div className="bg-gray-100 px-4 py-3 rounded-2xl rounded-bl-md flex gap-1.5 items-center">
-                {[0, 0.2, 0.4].map(d => <motion.div key={d} animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: d }} className="w-2 h-2 bg-gray-400 rounded-full" />)}
+              <div className="bg-gray-100 px-4 py-3 rounded-2xl rounded-bl-md flex gap-2 items-center">
+                {[0, 0.2, 0.4].map(d => <motion.div key={d} animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: d }} className="w-2 h-2 bg-primary-400 rounded-full" />)}
+                <span className="text-xs text-gray-400 ml-1">Gemini is thinking...</span>
               </div>
             </div>
           )}

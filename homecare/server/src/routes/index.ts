@@ -9,6 +9,7 @@ import adminRoutes from './admin.routes';
 import blogRoutes from './blog.routes';
 import reviewRoutes from './review.routes';
 import servicesRoutes from './services.routes';
+import aiRoutes from './ai.routes';
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.use('/admin', adminRoutes);
 router.use('/blogs', blogRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/services', servicesRoutes);
+router.use('/ai', aiRoutes);
 
 // Health check
 router.get('/health', (req, res) => {

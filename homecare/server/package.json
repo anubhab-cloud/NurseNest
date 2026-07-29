@@ -11,6 +11,7 @@
     "seed": "ts-node-dev src/scripts/seed.ts"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@socket.io/redis-adapter": "^8.2.1",
     "agora-access-token": "^2.0.4",
     "bcryptjs": "^2.4.3",
