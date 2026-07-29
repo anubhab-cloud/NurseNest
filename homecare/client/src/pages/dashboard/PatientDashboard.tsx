@@ -302,6 +302,8 @@ export default function PatientDashboard() {
   const Overview = () => {
     const isNewUser = realBookings.length === 0 && !useDemoData;
     const activeAppointments = isNewUser ? [] : appointments;
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
 
     return (
       <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-6">
