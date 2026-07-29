@@ -1215,7 +1215,77 @@ export default function PatientDashboard() {
   // ─── Settings ─────────────────────────────────────────────────────────────────
   const renderSettingsPanel = () => {
     const [notifs, setNotifs] = useState({ appointments: true, medicines: true, tracking: true, promotions: false });
-    const [profile, setProfile] = useState({ firstName: user?.firstName || '', lastName: user?.lastName || '', email: user?.email || '', phone: '' });
+    const [profile, setProfile] = useState({
+      firstName: user?.firstName || '',
+      lastName: user?.lastName || '',
+      email: user?.email || '',
+      phone: (user as any)?.phone || '',
+    });
+    const [savingProfile, setSavingProfile] = useState(false);
+    const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    // Password change state
+    const [showChangePass, setShowChangePass] = useState(false);
+    const [passData, setPassData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    const [changingPass, setChangingPass] = useState(false);
+    const [passMsg, setPassMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    // Deactivation state
+    const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+    const [deactivating, setDeactivating] = useState(false);
+
+    const handleSaveProfile = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setSavingProfile(true);
+      setProfileMsg(null);
+      try {
+        const res = await api.put('/auth/profile', {
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          phone: profile.phone,
+        });
+        setProfileMsg({ type: 'success', text: res.data?.message || 'Profile updated successfully!' });
+      } catch (err: any) {
+        setProfileMsg({ type: 'error', text: err?.response?.data?.message || 'Failed to update profile' });
+      } finally {
+        setSavingProfile(false);
+      }
+    };
+
+    const handleChangePassword = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (passData.newPassword !== passData.confirmPassword) {
+        setPassMsg({ type: 'error', text: 'New passwords do not match' });
+        return;
+      }
+      setChangingPass(true);
+      setPassMsg(null);
+      try {
+        const res = await api.post('/auth/change-password', {
+          currentPassword: passData.currentPassword,
+          newPassword: passData.newPassword,
+        });
+        setPassMsg({ type: 'success', text: res.data?.message || 'Password changed successfully!' });
+        setPassData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setTimeout(() => setShowChangePass(false), 2000);
+      } catch (err: any) {
+        setPassMsg({ type: 'error', text: err?.response?.data?.message || 'Failed to change password' });
+      } finally {
+        setChangingPass(false);
+      }
+    };
+
+    const handleDeactivate = async () => {
+      setDeactivating(true);
+      try {
+        await api.post('/auth/deactivate');
+        logout();
+      } catch (err) {
+        console.error('Deactivation failed:', err);
+        setDeactivating(false);
+      }
+    };
+
     return (
       <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-5">
         <motion.div variants={fade}><h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900">Settings</h1></motion.div>
@@ -1223,6 +1293,13 @@ export default function PatientDashboard() {
         {/* Profile */}
         <motion.div variants={fade} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
           <h3 className="font-bold text-gray-900 font-display mb-4">Profile Information</h3>
+
+          {profileMsg && (
+            <div className={`p-3.5 rounded-2xl mb-4 text-xs font-semibold ${profileMsg.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+              {profileMsg.text}
+            </div>
+          )}
+
           <div className="flex items-center gap-4 mb-5">
             <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-teal-500 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg">
               {user?.firstName?.[0]}{user?.lastName?.[0]}
@@ -1230,33 +1307,125 @@ export default function PatientDashboard() {
             <div>
               <p className="font-bold text-gray-900">{user?.firstName} {user?.lastName}</p>
               <p className="text-sm text-gray-500">{user?.email}</p>
-              <button className="text-primary-600 text-xs font-semibold mt-1 hover:underline" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-                Change Photo
-              </button>
             </div>
           </div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            {[
-              { label: 'First Name', key: 'firstName' },
-              { label: 'Last Name', key: 'lastName' },
-              { label: 'Email', key: 'email' },
-              { label: 'Phone', key: 'phone' },
-            ].map(f => (
-              <div key={f.key}>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">{f.label}</label>
+
+          <form onSubmit={handleSaveProfile}>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">First Name</label>
                 <input
                   className="input-field text-sm py-2.5"
-                  value={(profile as any)[f.key]}
-                  onChange={e => setProfile(p => ({ ...p, [f.key]: e.target.value }))}
-                  placeholder={f.label}
-                  style={{ fontSize: '16px' }}
+                  value={profile.firstName}
+                  onChange={e => setProfile(p => ({ ...p, firstName: e.target.value }))}
+                  required
                 />
               </div>
-            ))}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Last Name</label>
+                <input
+                  className="input-field text-sm py-2.5"
+                  value={profile.lastName}
+                  onChange={e => setProfile(p => ({ ...p, lastName: e.target.value }))}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Email (Account ID)</label>
+                <input
+                  className="input-field text-sm py-2.5 bg-gray-50 text-gray-500 cursor-not-allowed"
+                  value={profile.email}
+                  disabled
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Phone Number</label>
+                <input
+                  className="input-field text-sm py-2.5"
+                  value={profile.phone}
+                  onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
+                  placeholder="+91 98765 43210"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={savingProfile}
+              className="btn-primary mt-4 py-2.5 px-6 text-sm flex items-center gap-2"
+              style={{ minHeight: 'unset', minWidth: 'unset' }}
+            >
+              {savingProfile ? 'Saving...' : 'Save Changes'}
+            </button>
+          </form>
+        </motion.div>
+
+        {/* Change Password Form / Modal */}
+        <motion.div variants={fade} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-gray-900 font-display">Security & Password</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Manage your account security and password</p>
+            </div>
+            <button
+              onClick={() => setShowChangePass(!showChangePass)}
+              className="text-xs font-semibold text-primary-600 border border-primary-200 px-3 py-1.5 rounded-xl hover:bg-primary-50 transition-colors"
+              style={{ minHeight: 'unset', minWidth: 'unset' }}
+            >
+              {showChangePass ? 'Cancel' : 'Change Password'}
+            </button>
           </div>
-          <button className="btn-primary mt-4 py-2.5 px-6 text-sm" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-            Save Changes
-          </button>
+
+          {showChangePass && (
+            <form onSubmit={handleChangePassword} className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+              {passMsg && (
+                <div className={`p-3 rounded-xl text-xs font-semibold ${passMsg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                  {passMsg.text}
+                </div>
+              )}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Current Password</label>
+                <input
+                  type="password"
+                  value={passData.currentPassword}
+                  onChange={e => setPassData(p => ({ ...p, currentPassword: e.target.value }))}
+                  className="input-field text-sm py-2"
+                  required
+                />
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">New Password</label>
+                  <input
+                    type="password"
+                    value={passData.newPassword}
+                    onChange={e => setPassData(p => ({ ...p, newPassword: e.target.value }))}
+                    className="input-field text-sm py-2"
+                    minLength={8}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={passData.confirmPassword}
+                    onChange={e => setPassData(p => ({ ...p, confirmPassword: e.target.value }))}
+                    className="input-field text-sm py-2"
+                    minLength={8}
+                    required
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={changingPass}
+                className="btn-primary text-xs py-2 px-5"
+                style={{ minHeight: 'unset', minWidth: 'unset' }}
+              >
+                {changingPass ? 'Updating...' : 'Update Password'}
+              </button>
+            </form>
+          )}
         </motion.div>
 
         {/* Notifications */}
@@ -1286,42 +1455,44 @@ export default function PatientDashboard() {
           </div>
         </motion.div>
 
-        {/* Security */}
-        <motion.div variants={fade} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
-          <h3 className="font-bold text-gray-900 font-display mb-4">Security</h3>
-          <div className="space-y-3">
-            {[
-              { label: 'Change Password', icon: Shield, color: 'text-blue-600 bg-blue-50' },
-              { label: 'Two-Factor Authentication', icon: CheckCircle, color: 'text-green-600 bg-green-50' },
-              { label: 'Active Sessions', icon: Activity, color: 'text-purple-600 bg-purple-50' },
-            ].map(item => (
-              <button key={item.label} className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-gray-50 transition-colors text-left"
-                style={{ minHeight: 'unset', minWidth: 'unset' }}>
-                <div className={`w-9 h-9 ${item.color} rounded-xl flex items-center justify-center flex-shrink-0`}>
-                  <item.icon className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-medium text-gray-800 flex-1">{item.label}</span>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
-              </button>
-            ))}
-          </div>
-        </motion.div>
-
         {/* Danger zone */}
         <motion.div variants={fade} className="bg-red-50 border border-red-200 rounded-3xl p-5">
-          <h3 className="font-bold text-red-700 font-display mb-3">Danger Zone</h3>
-          <div className="space-y-2">
-            <button className="w-full text-left p-3 rounded-xl hover:bg-red-100 transition-colors text-sm text-red-600 font-medium" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+          <h3 className="font-bold text-red-700 font-display mb-2">Danger Zone</h3>
+          <p className="text-xs text-red-600 mb-4">Deactivating your account will suspend your bookings and active caregiver plans.</p>
+
+          {!showDeactivateConfirm ? (
+            <button
+              onClick={() => setShowDeactivateConfirm(true)}
+              className="text-xs font-semibold px-4 py-2.5 rounded-xl bg-red-600 text-white hover:bg-red-700 transition-colors"
+              style={{ minHeight: 'unset', minWidth: 'unset' }}
+            >
               Deactivate Account
             </button>
-            <button className="w-full text-left p-3 rounded-xl hover:bg-red-100 transition-colors text-sm text-red-600 font-medium" style={{ minHeight: 'unset', minWidth: 'unset' }}>
-              Delete Account & Data
-            </button>
-          </div>
+          ) : (
+            <div className="bg-white rounded-2xl p-4 border border-red-200 space-y-3">
+              <p className="text-xs font-bold text-red-700">Are you sure you want to deactivate your account?</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDeactivate}
+                  disabled={deactivating}
+                  className="px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-semibold hover:bg-red-700"
+                >
+                  {deactivating ? 'Deactivating...' : 'Yes, Deactivate'}
+                </button>
+                <button
+                  onClick={() => setShowDeactivateConfirm(false)}
+                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-xs font-semibold hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </motion.div>
       </motion.div>
     );
   };
+
 
   // ─── Section renderer ─────────────────────────────────────────────────────────
   const renderSection = () => {

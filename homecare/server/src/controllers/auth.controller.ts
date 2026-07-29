@@ -195,3 +195,86 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
 
   res.json({ success: true, data: { accessToken } });
 };
+
+// ─── Update Profile ────────────────────────────────────────────────────────────
+
+export const updateProfile = async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  const { firstName, lastName, phone } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, 'User not found');
+  }
+
+  if (firstName) user.firstName = firstName.trim();
+  if (lastName) user.lastName = lastName.trim();
+  if (phone) user.phone = phone.trim();
+
+  await user.save();
+
+  res.json({
+    success: true,
+    message: 'Profile updated successfully',
+    data: {
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+      },
+    },
+  });
+};
+
+// ─── Change Password ───────────────────────────────────────────────────────────
+
+export const changePassword = async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, 'Current and new password are required');
+  }
+
+  if (newPassword.length < 8) {
+    throw new ApiError(400, 'New password must be at least 8 characters long');
+  }
+
+  const user = await User.findById(userId).select('+password');
+  if (!user) {
+    throw new ApiError(404, 'User not found');
+  }
+
+  const isValid = await user.comparePassword(currentPassword);
+  if (!isValid) {
+    throw new ApiError(401, 'Incorrect current password');
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  res.json({
+    success: true,
+    message: 'Password changed successfully',
+  });
+};
+
+// ─── Deactivate Account ────────────────────────────────────────────────────────
+
+export const deactivateAccount = async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+
+  await User.findByIdAndUpdate(userId, { isActive: false, refreshToken: null });
+
+  res.clearCookie('accessToken');
+  res.clearCookie('refreshToken');
+
+  res.json({
+    success: true,
+    message: 'Account has been deactivated',
+  });
+};
+
