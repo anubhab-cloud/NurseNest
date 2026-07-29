@@ -164,11 +164,13 @@ export default function PatientDashboard() {
     const currentAvatar = customAvatar || user?.avatar;
     if (currentAvatar) {
       return (
-        <img src={currentAvatar} alt="Profile" className={`${sizeClass} rounded-full object-cover shadow-md border-2 border-white flex-shrink-0`} />
+        <div className={`${sizeClass} rounded-full overflow-hidden flex-shrink-0 shadow-md border-2 border-white bg-gray-100 relative`}>
+          <img src={currentAvatar} alt="Profile" className="w-full h-full object-cover rounded-full" />
+        </div>
       );
     }
     return (
-      <div className={`${sizeClass} bg-gradient-to-br from-primary-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold shadow-md flex-shrink-0`}>
+      <div className={`${sizeClass} bg-gradient-to-br from-primary-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold shadow-md flex-shrink-0 border-2 border-white`}>
         {user?.firstName?.[0]}{user?.lastName?.[0]}
       </div>
     );
@@ -304,15 +306,15 @@ export default function PatientDashboard() {
       </div>
 
       {/* User card */}
-      <div className="mx-4 mt-4 mb-3 bg-gradient-to-br from-primary-50 to-teal-50 rounded-2xl p-4">
-        <div className="flex items-center gap-3">
+      <div className="mx-4 mt-4 mb-3 bg-gradient-to-br from-primary-50 to-teal-50 rounded-2xl p-4 overflow-hidden">
+        <div className="flex items-center gap-3 min-w-0">
           {renderUserAvatar("w-11 h-11 text-sm")}
-          <div>
-            <p className="font-bold text-gray-900 text-sm leading-tight">{user?.firstName} {user?.lastName}</p>
-            <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
-            <div className="flex items-center gap-1 mt-0.5">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-[10px] text-green-600 font-semibold">Active Plan: Standard</span>
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-gray-900 text-sm leading-tight truncate">{user?.firstName} {user?.lastName}</p>
+            <p className="text-xs text-gray-500 capitalize truncate">{user?.role}</p>
+            <div className="flex items-center gap-1 mt-0.5 min-w-0">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
+              <span className="text-[10px] text-green-600 font-semibold truncate">Active Plan: Standard</span>
             </div>
           </div>
         </div>
@@ -1293,15 +1295,30 @@ export default function PatientDashboard() {
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      if (file.size > 3 * 1024 * 1024) {
-        setProfileMsg({ type: 'error', text: 'Image file size should be less than 3MB' });
-        return;
-      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64 = reader.result as string;
-        setCustomAvatar(base64);
-        setProfileMsg({ type: 'success', text: 'New photo selected! Click "Save Changes" below to apply.' });
+        const img = new Image();
+        img.onload = () => {
+          // Crop and scale down to 256x256 square thumbnail
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const size = 256;
+          canvas.width = size;
+          canvas.height = size;
+
+          if (ctx) {
+            const minDim = Math.min(img.width, img.height);
+            const sx = (img.width - minDim) / 2;
+            const sy = (img.height - minDim) / 2;
+
+            ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            setCustomAvatar(compressedBase64);
+            setProfileMsg({ type: 'success', text: 'Photo optimized & selected! Click "Save Changes" below to apply.' });
+          }
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     };

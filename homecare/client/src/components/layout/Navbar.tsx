@@ -164,7 +164,9 @@ export default function Navbar() {
                       style={{ minHeight: 'unset', minWidth: 'unset' }}
                     >
                       {user?.avatar ? (
-                        <img src={user.avatar} alt="Avatar" className="w-7 h-7 rounded-full object-cover shadow-sm border border-white flex-shrink-0" />
+                        <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border border-white shadow-sm bg-slate-200 relative">
+                          <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+                        </div>
                       ) : (
                         <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
                           {user?.firstName?.[0]}{user?.lastName?.[0]}
