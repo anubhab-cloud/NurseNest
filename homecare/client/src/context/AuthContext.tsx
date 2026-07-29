@@ -3,12 +3,14 @@ import axios from 'axios';
 
 const api = axios.create({ baseURL: '/api/v1', withCredentials: true });
 
-interface User { _id: string; firstName: string; lastName: string; email: string; role: string; avatar?: string; }
+export interface User { _id: string; firstName: string; lastName: string; email: string; role: string; avatar?: string; phone?: string; }
+
 interface AuthContextType {
   user: User | null; token: string | null; loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => void;
+  updateUser: (data: Partial<User>) => void;
   isAuthenticated: boolean;
 }
 
@@ -42,6 +44,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(t); setUser(data.data.user);
   };
 
+  const updateUser = (data: Partial<User>) => {
+    setUser(prev => (prev ? { ...prev, ...data } : null));
+  };
+
   const logout = () => {
     localStorage.removeItem('hc_token');
     delete api.defaults.headers.common['Authorization'];
@@ -49,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateUser, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

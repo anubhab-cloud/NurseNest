@@ -83,7 +83,7 @@ const stagger = { visible: { transition: { staggerChildren: 0.07 } } } as const;
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function PatientDashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [active, setActive]         = useState('overview');
   const [sideOpen, setSideOpen]     = useState(false);
   const [aiInput, setAiInput]       = useState('');
@@ -144,6 +144,9 @@ export default function PatientDashboard() {
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
 
+  // Avatar state
+  const [customAvatar, setCustomAvatar] = useState<string>(user?.avatar || '');
+
   // Keep profile form synced with authenticated user object
   useEffect(() => {
     if (user) {
@@ -153,8 +156,23 @@ export default function PatientDashboard() {
         email: user.email || '',
         phone: (user as any)?.phone || '',
       });
+      if (user.avatar) setCustomAvatar(user.avatar);
     }
   }, [user]);
+
+  const renderUserAvatar = (sizeClass = "w-11 h-11 text-sm") => {
+    const currentAvatar = customAvatar || user?.avatar;
+    if (currentAvatar) {
+      return (
+        <img src={currentAvatar} alt="Profile" className={`${sizeClass} rounded-full object-cover shadow-md border-2 border-white flex-shrink-0`} />
+      );
+    }
+    return (
+      <div className={`${sizeClass} bg-gradient-to-br from-primary-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold shadow-md flex-shrink-0`}>
+        {user?.firstName?.[0]}{user?.lastName?.[0]}
+      </div>
+    );
+  };
 
 
   useEffect(() => {
@@ -288,9 +306,7 @@ export default function PatientDashboard() {
       {/* User card */}
       <div className="mx-4 mt-4 mb-3 bg-gradient-to-br from-primary-50 to-teal-50 rounded-2xl p-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 bg-gradient-to-br from-primary-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
-            {user?.firstName?.[0]}{user?.lastName?.[0]}
-          </div>
+          {renderUserAvatar("w-11 h-11 text-sm")}
           <div>
             <p className="font-bold text-gray-900 text-sm leading-tight">{user?.firstName} {user?.lastName}</p>
             <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
@@ -1256,14 +1272,47 @@ export default function PatientDashboard() {
           firstName: profile.firstName,
           lastName: profile.lastName,
           phone: profile.phone,
+          avatar: customAvatar,
         });
-        setProfileMsg({ type: 'success', text: res.data?.message || 'Profile updated successfully!' });
+        if (updateUser) {
+          updateUser({
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            phone: profile.phone,
+            avatar: customAvatar,
+          });
+        }
+        setProfileMsg({ type: 'success', text: res.data?.message || 'Profile & Avatar updated successfully!' });
       } catch (err: any) {
         setProfileMsg({ type: 'error', text: err?.response?.data?.message || 'Failed to update profile' });
       } finally {
         setSavingProfile(false);
       }
     };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 3 * 1024 * 1024) {
+        setProfileMsg({ type: 'error', text: 'Image file size should be less than 3MB' });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setCustomAvatar(base64);
+        setProfileMsg({ type: 'success', text: 'New photo selected! Click "Save Changes" below to apply.' });
+      };
+      reader.readAsDataURL(file);
+    };
+
+    const avatarPresets = [
+      { label: 'Default Initials', url: '' },
+      { label: 'Medical Bot', url: `https://api.dicebear.com/7.x/bottts/svg?seed=${user?.firstName || 'Nurse'}` },
+      { label: 'Avatar 1', url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.firstName || 'User1'}` },
+      { label: 'Avatar 2', url: `https://api.dicebear.com/7.x/personas/svg?seed=${user?.firstName || 'User2'}` },
+      { label: 'Avatar 3', url: `https://api.dicebear.com/7.x/miniavs/svg?seed=${user?.firstName || 'User3'}` },
+    ];
 
     const handleChangePassword = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -1313,13 +1362,39 @@ export default function PatientDashboard() {
             </div>
           )}
 
-          <div className="flex items-center gap-4 mb-5">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-teal-500 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg">
-              {user?.firstName?.[0]}{user?.lastName?.[0]}
-            </div>
-            <div>
-              <p className="font-bold text-gray-900">{user?.firstName} {user?.lastName}</p>
-              <p className="text-sm text-gray-500">{user?.email}</p>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 pb-6 border-b border-gray-100">
+            {renderUserAvatar("w-20 h-20 text-2xl")}
+            <div className="space-y-2 flex-1">
+              <div>
+                <p className="font-bold text-gray-900 text-base">{user?.firstName} {user?.lastName}</p>
+                <p className="text-xs text-gray-500">{user?.email}</p>
+              </div>
+
+              {/* Image upload button & Preset selector */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-50 text-primary-700 text-xs font-semibold hover:bg-primary-100 transition-colors border border-primary-200">
+                  📷 Upload Photo
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                </label>
+
+                {avatarPresets.map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setCustomAvatar(preset.url);
+                      setProfileMsg({ type: 'success', text: `Selected ${preset.label}! Click "Save Changes" to apply.` });
+                    }}
+                    className={`text-xs px-2.5 py-1 rounded-lg border transition-all ${
+                      customAvatar === preset.url
+                        ? 'border-primary-600 bg-primary-600 text-white font-bold'
+                        : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -1585,9 +1660,7 @@ export default function PatientDashboard() {
               <span className="hidden sm:block">SOS</span>
             </button>
             {/* Avatar */}
-            <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-teal-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-              {user?.firstName?.[0]}{user?.lastName?.[0]}
-            </div>
+            {renderUserAvatar("w-9 h-9 text-xs")}
           </div>
         </header>
 

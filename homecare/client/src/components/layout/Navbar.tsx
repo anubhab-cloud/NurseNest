@@ -163,9 +163,13 @@ export default function Navbar() {
                       className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200/80 border border-slate-200 transition-all"
                       style={{ minHeight: 'unset', minWidth: 'unset' }}
                     >
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                        {user?.firstName?.[0]}{user?.lastName?.[0]}
-                      </div>
+                      {user?.avatar ? (
+                        <img src={user.avatar} alt="Avatar" className="w-7 h-7 rounded-full object-cover shadow-sm border border-white flex-shrink-0" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
+                          {user?.firstName?.[0]}{user?.lastName?.[0]}
+                        </div>
+                      )}
                       <span className="text-xs font-semibold text-slate-800">{user?.firstName}</span>
                     </button>
 

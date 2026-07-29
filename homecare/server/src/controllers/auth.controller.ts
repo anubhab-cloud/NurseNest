@@ -200,7 +200,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
 
 export const updateProfile = async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
-  const { firstName, lastName, phone } = req.body;
+  const { firstName, lastName, phone, avatar } = req.body;
 
   const user = await User.findById(userId);
   if (!user) {
@@ -210,6 +210,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
   if (firstName) user.firstName = firstName.trim();
   if (lastName) user.lastName = lastName.trim();
   if (phone) user.phone = phone.trim();
+  if (avatar !== undefined) user.avatar = avatar;
 
   await user.save();
 
@@ -224,6 +225,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
         email: user.email,
         phone: user.phone,
         role: user.role,
+        avatar: user.avatar,
       },
     },
   });
