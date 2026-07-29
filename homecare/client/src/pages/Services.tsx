@@ -15,7 +15,7 @@ const SERVICES = [
 
 export default function Services() {
   return (
-    <div className="pt-16">
+    <div className="pt-28 sm:pt-32">
       {/* Hero */}
       <section className="section-sm bg-brand text-center">
         <div className="container">

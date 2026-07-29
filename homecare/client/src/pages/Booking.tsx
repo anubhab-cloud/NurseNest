@@ -80,7 +80,7 @@ export default function Booking() {
   );
 
   return (
-    <div className="min-h-screen gradient-bg pt-24 pb-16">
+    <div className="min-h-screen gradient-bg pt-28 sm:pt-32 pb-16">
       <div className="max-w-2xl mx-auto px-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
           <h1 className="text-4xl font-bold font-display text-gray-900 mb-2">Book Your <span className="gradient-text">Care Service</span></h1>

@@ -33,7 +33,7 @@ export default function Pricing() {
   const [yearly, setYearly] = useState(false);
 
   return (
-    <div className="pt-20">
+    <div className="pt-28 sm:pt-32">
       {/* Hero */}
       <section className="py-20 gradient-bg text-center">
         <div className="max-w-4xl mx-auto px-6">

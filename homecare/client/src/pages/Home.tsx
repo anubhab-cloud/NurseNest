@@ -5,7 +5,7 @@ import { motion, AnimatePresence, useInView } from 'framer-motion';
 import {
   ArrowRight, Star, Shield, CheckCircle, Phone, ChevronDown, ChevronUp,
   Heart, Activity, UserCheck, Zap, Award, DollarSign, Headphones,
-  Clock, Calendar, TrendingUp, Navigation, MessageSquare
+  Clock, Calendar, TrendingUp, Navigation, MessageSquare, Sparkles
 } from 'lucide-react';
 
 // Lazy-load the heavy 3D component
@@ -97,7 +97,7 @@ export default function Home() {
     <div className="overflow-x-hidden">
 
       {/* ══ HERO ═══════════════════════════════════════════════════════════ */}
-      <section className="relative min-h-[100dvh] flex items-center pt-16 pb-24 sm:pb-16 bg-animated overflow-hidden">
+      <section className="relative min-h-[100dvh] flex items-center pt-28 sm:pt-32 pb-24 sm:pb-16 bg-animated overflow-hidden">
         {/* Blob accents */}
         <div className="absolute top-0 right-0 w-[480px] h-[480px] rounded-full opacity-40"
           style={{ background: 'radial-gradient(circle, #BAD9FF 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
@@ -130,11 +130,21 @@ export default function Home() {
               </motion.p>
 
               {/* CTAs */}
-              <motion.div variants={fadeUp} {...dur} className="flex flex-col sm:flex-row gap-3 mb-10">
-                <Link to="/booking" className="btn btn-primary btn-lg">
-                  Book Free Consultation <ArrowRight className="w-5 h-5" />
+              <motion.div variants={fadeUp} {...dur} className="flex flex-col sm:flex-row gap-4 mb-10 items-stretch sm:items-center">
+                <Link 
+                  to="/booking" 
+                  className="group relative inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-blue-600 via-teal-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-extrabold text-sm uppercase tracking-wider px-8 py-4 rounded-2xl shadow-xl shadow-teal-500/25 hover:shadow-2xl hover:shadow-teal-500/40 hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 overflow-hidden border border-white/20"
+                >
+                  <span className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out" />
+                  <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse flex-shrink-0" />
+                  <span className="relative z-10">Book Consultation</span>
+                  <span className="relative z-10 bg-emerald-400/30 text-emerald-100 text-xs font-black px-2 py-0.5 rounded-md border border-emerald-300/40 tracking-widest">
+                    FREE
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform flex-shrink-0" />
                 </Link>
-                <Link to="/services" className="btn btn-secondary btn-lg">
+
+                <Link to="/services" className="btn btn-secondary btn-lg rounded-2xl px-6">
                   Explore Services
                 </Link>
               </motion.div>

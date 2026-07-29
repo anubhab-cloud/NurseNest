@@ -28,7 +28,7 @@ const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
 
 export default function About() {
   return (
-    <div className="pt-20">
+    <div className="pt-28 sm:pt-32">
       {/* Hero */}
       <section className="py-24 gradient-bg">
         <div className="max-w-4xl mx-auto px-6 text-center">

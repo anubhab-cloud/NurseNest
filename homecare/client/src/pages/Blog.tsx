@@ -55,7 +55,7 @@ export default function Blog() {
     <div className="overflow-x-hidden" style={{ background: '#F8FAFC' }}>
 
       {/* ══ HERO ══════════════════════════════════════════════════════════ */}
-      <section className="relative pt-24 pb-20 overflow-hidden" style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}>
+      <section className="relative pt-28 sm:pt-32 pb-20 overflow-hidden" style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}>
         {/* Gradient mesh background */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full opacity-[0.06]"
