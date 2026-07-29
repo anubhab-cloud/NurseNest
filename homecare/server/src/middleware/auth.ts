@@ -71,3 +71,30 @@ export const authorize = (...roles: string[]) => {
     next();
   };
 };
+
+// ─── Optional Authentication Middleware ────────────────────────────────────────
+
+export const optionalAuthenticate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const token =
+      req.cookies?.accessToken ||
+      req.headers.authorization?.replace('Bearer ', '');
+
+    if (token) {
+      const decoded = jwt.verify(token, config.jwt.secret) as {
+        userId: string;
+        role: string;
+        email: string;
+      };
+      req.user = decoded;
+    }
+  } catch {
+    // Silently ignore invalid or expired tokens for guest AI access
+  }
+  next();
+};
+

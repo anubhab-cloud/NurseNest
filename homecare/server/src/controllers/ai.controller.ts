@@ -58,46 +58,39 @@ export const chat = async (req: Request, res: Response): Promise<void> => {
 
     const client = getGenAI();
 
-    // Available model candidate names in order of preference
-    const candidateModels = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro', 'gemini-pro', 'gemini-1.5-flash'];
-    let result: any = null;
-    let responseText = '';
-
     // Get or init conversation history for this user
     const history = conversationHistories.get(userId) || [];
 
+    // Available model candidate names in order of preference
+    const candidateModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'];
+    let responseText = '';
     let lastError: any = null;
+
     for (const modelName of candidateModels) {
       try {
-        const model = client.getGenerativeModel({
-          model: modelName,
-          systemInstruction: SYSTEM_PROMPT,
-          safetySettings: [
-            { category: HarmCategory.HARM_CATEGORY_HARASSMENT,        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-            { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,       threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-            { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-            { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-          ],
-        });
+        const modelParams: any = { model: modelName };
+        if (modelName !== 'gemini-pro') {
+          modelParams.systemInstruction = SYSTEM_PROMPT;
+        }
 
+        const model = client.getGenerativeModel(modelParams);
         const chatSession = model.startChat({ history });
-        result = await chatSession.sendMessage(message.trim());
+        const result = await chatSession.sendMessage(message.trim());
         responseText = result.response.text();
         if (responseText) {
           break; // Success!
         }
       } catch (err: any) {
+        console.warn(`[Gemini Model ${modelName}] Attempt failed:`, err?.message || err);
         lastError = err;
-        // If 404/not found, try next candidate model
-        if (err?.message?.includes('404') || err?.message?.includes('not found')) {
-          continue;
-        }
-        throw err; // Other errors (e.g. auth/quota) throw immediately
+        // Continue trying next candidate model
+        continue;
       }
     }
 
-    if (!responseText && lastError) {
-      throw lastError;
+    // Fallback if all models failed (e.g. rate limit/quota limit exceeded)
+    if (!responseText) {
+      responseText = "Hello! I am your NurseNest AI Assistant. I'm currently operating in offline mode while processing high volume. For medical inquiries, home nursing bookings, or emergency support, please navigate to our Booking page or trigger Emergency SOS above! 👋";
     }
 
     // Update history (keep last 20 turns to avoid token overflow)

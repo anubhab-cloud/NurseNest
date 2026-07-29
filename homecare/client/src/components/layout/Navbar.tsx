@@ -188,7 +188,7 @@ export default function Navbar() {
                           <div className="py-1">
                             {[
                               { icon: LayoutDashboard, label: 'Dashboard', href: dashPath },
-                              { icon: User, label: 'Profile Settings', href: '/profile' },
+                              { icon: User, label: 'Profile Settings', href: dashPath },
                             ].map(item => (
                               <Link 
                                 key={item.href} 

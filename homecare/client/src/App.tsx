@@ -70,8 +70,12 @@ function AppRoutes() {
       <Route path="/booking" element={<><Navbar /><Booking /></>} />
 
       {/* Protected dashboards */}
+      <Route path="/dashboard" element={<Navigate to="/dashboard/patient" replace />} />
+      <Route path="/profile" element={<Navigate to="/dashboard/patient" replace />} />
+      <Route path="/settings" element={<Navigate to="/dashboard/patient" replace />} />
       <Route path="/dashboard/patient" element={<Protected><PatientDashboard /></Protected>} />
       <Route path="/dashboard/patient/*" element={<Protected><PatientDashboard /></Protected>} />
+
 
       {/* Fallback */}
       <Route path="*" element={
