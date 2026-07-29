@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { useAuth, api } from '../../context/AuthContext';
 import NurseNestLogo from '../../components/brand/NurseNestLogo';
+import AgoraVideoCall from '../../components/AgoraVideoCall';
+
 
 // ─── Mock Data ─────────────────────────────────────────────────────────────────
 const appointments = [
@@ -112,6 +114,11 @@ export default function PatientDashboard() {
   const [medicinesFetched, setMedicinesFetched] = useState(false);
   const [showAddMed, setShowAddMed] = useState(false);
   const [newMed, setNewMed] = useState({ name: '', dosage: '1 tablet', time: '8:00 AM', type: 'General' });
+
+  // Video call state
+  const [videoCallActive, setVideoCallActive] = useState(false);
+  const [activeCallBookingId, setActiveCallBookingId] = useState<string>('demo');
+
 
   useEffect(() => {
     api.get('/bookings/my')
@@ -933,35 +940,8 @@ export default function PatientDashboard() {
           </div>
         </>
       ) : (
-        <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
-          className="bg-gray-900 rounded-3xl overflow-hidden">
-          {/* Video area */}
-          <div className="relative h-64 sm:h-80 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
-            <div className="text-center text-white">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-teal-500 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3 animate-pulse-slow">PN</div>
-              <p className="font-semibold">Dr. Priya Nair</p>
-              <p className="text-gray-400 text-sm">00:03:24</p>
-            </div>
-            {/* Self preview */}
-            <div className="absolute bottom-4 right-4 w-20 h-28 bg-gray-700 rounded-xl flex items-center justify-center border-2 border-gray-600">
-              <User className="w-8 h-8 text-gray-400" />
-            </div>
-          </div>
-          {/* Controls */}
-          <div className="p-5 flex items-center justify-center gap-4">
-            {[
-              { icon: Mic, label: 'Mute', color: 'bg-gray-700 text-white' },
-              { icon: Video, label: 'Camera', color: 'bg-gray-700 text-white' },
-              { icon: MessageSquare, label: 'Chat', color: 'bg-gray-700 text-white' },
-              { icon: Phone, label: 'End', color: 'bg-red-500 text-white', action: () => setVideoCallActive(false) },
-            ].map((c, i) => (
-              <button key={i} onClick={c.action}
-                className={`w-12 h-12 rounded-full ${c.color} flex items-center justify-center hover:opacity-90 transition-opacity`}
-                style={{ minHeight: 'unset', minWidth: 'unset' }}>
-                <c.icon className="w-5 h-5" />
-              </button>
-            ))}
-          </div>
+        <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}>
+          <AgoraVideoCall bookingId={activeCallBookingId} onEndCall={() => setVideoCallActive(false)} />
         </motion.div>
       )}
     </motion.div>

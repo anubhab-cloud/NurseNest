@@ -15,45 +15,48 @@ export const generateRtcToken = async (req: Request, res: Response): Promise<voi
   const userRole = req.user!.role;
 
   // Validate Agora credentials are configured
-  if (!config.agora.appId || !config.agora.appCertificate) {
+  if (!config.agora.appId || config.agora.appId === 'demo') {
     throw new ApiError(500, 'Video consultation service is not configured');
   }
 
-  // Verify the booking exists and user is a participant
-  const booking = await Booking.findById(bookingId);
-  if (!booking) {
-    throw new ApiError(404, 'Booking not found');
+  // Verify the booking exists and user is a participant (or allow fallback for demo calls)
+  let channelName = `consultation-${bookingId}`;
+  if (bookingId !== 'demo' && bookingId !== 'quick') {
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      throw new ApiError(404, 'Booking not found');
+    }
+
+    const isParticipant =
+      booking.patientId.toString() === userId ||
+      booking.nurseId.toString() === userId;
+
+    if (!isParticipant && userRole !== 'admin') {
+      throw new ApiError(403, 'Not authorized to join this consultation');
+    }
+  } else {
+    channelName = `demo-room-${userId.slice(-6)}`;
   }
 
-  const isParticipant =
-    booking.patientId.toString() === userId ||
-    booking.nurseId.toString() === userId;
-
-  if (!isParticipant && userRole !== 'admin') {
-    throw new ApiError(403, 'Not authorized to join this consultation');
-  }
-
-  // Only allow video for confirmed/in-progress bookings
-  if (!['confirmed', 'in-progress'].includes(booking.status)) {
-    throw new ApiError(400, 'Video consultation is only available for active bookings');
-  }
-
-  // Generate token
-  const channelName = `consultation-${bookingId}`;
+  // Generate token if certificate is present, else null (for Agora Testing Mode)
+  let token: string | null = null;
   const uid = 0; // Use 0 for dynamic UID assignment by Agora
-  const role = RtcRole.PUBLISHER; // Both patient and nurse can publish audio/video
-  const expirationTimeInSeconds = 3600; // Token valid for 1 hour
+  const expirationTimeInSeconds = 3600;
   const currentTimestamp = Math.floor(Date.now() / 1000);
   const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
 
-  const token = RtcTokenBuilder.buildTokenWithUid(
-    config.agora.appId,
-    config.agora.appCertificate,
-    channelName,
-    uid,
-    role,
-    privilegeExpiredTs
-  );
+  if (config.agora.appCertificate && config.agora.appCertificate.trim() !== '') {
+    const role = RtcRole.PUBLISHER;
+    token = RtcTokenBuilder.buildTokenWithUid(
+      config.agora.appId,
+      config.agora.appCertificate,
+      channelName,
+      uid,
+      role,
+      privilegeExpiredTs
+    );
+  }
+
 
   res.json({
     success: true,
