@@ -1,3 +1,4 @@
+// About page - company story, team, timeline, and values
 import { motion } from 'framer-motion';
 import { Heart, Target, Eye, Award, Users, TrendingUp } from 'lucide-react';
 
