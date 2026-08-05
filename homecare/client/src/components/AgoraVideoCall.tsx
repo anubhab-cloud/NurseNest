@@ -36,8 +36,13 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({ bookingId = 'qui
         setLoading(true);
         setError(null);
 
-        // Fetch token and credentials from backend
-        const res = await api.get(`/agora/${bookingId}/token`);
+        // Fetch token and credentials from backend with fallback endpoint check
+        let res;
+        try {
+          res = await api.get(`/agora/${bookingId}/token`);
+        } catch (tokenErr) {
+          res = await api.get(`/agora/token/${bookingId}`);
+        }
         const { token, channelName, appId } = res.data.data;
 
         if (!isMounted) return;
@@ -69,19 +74,30 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({ bookingId = 'qui
         });
 
         // Join channel
-        await client.join(appId, channelName, token || null, null);
+        await client.join(appId || 'f5cc87b307fe4202b165ff7cde4197e5', channelName, token || null, null);
 
-        // Create local tracks
-        const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
-        localAudioTrackRef.current = micTrack;
-        localVideoTrackRef.current = camTrack;
+        // Try creating local microphone and camera tracks
+        try {
+          const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+          localAudioTrackRef.current = micTrack;
+          localVideoTrackRef.current = camTrack;
 
-        if (localVideoRef.current) {
-          camTrack.play(localVideoRef.current);
+          if (localVideoRef.current) {
+            camTrack.play(localVideoRef.current);
+          }
+
+          await client.publish([micTrack, camTrack]);
+        } catch (mediaErr: any) {
+          console.warn('Camera/Microphone access limited or unavailable:', mediaErr);
+          // Try publishing audio-only if camera is unavailable
+          try {
+            const micTrack = await AgoraRTC.createMicrophoneAudioTrack();
+            localAudioTrackRef.current = micTrack;
+            await client.publish([micTrack]);
+          } catch (micErr) {
+            console.warn('Microphone access unavailable:', micErr);
+          }
         }
-
-        // Publish local tracks
-        await client.publish([micTrack, camTrack]);
 
         if (isMounted) {
           setJoined(true);

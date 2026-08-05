@@ -7,8 +7,9 @@ const router = Router();
 
 router.use(authenticate);
 
-// Generate token for a specific booking consultation
+// Generate token for a specific booking consultation (supports both /token/:bookingId and /:bookingId/token)
 router.get('/token/:bookingId', asyncHandler(generateRtcToken));
+router.get('/:bookingId/token', asyncHandler(generateRtcToken));
 
 // Generate token with custom UID
 router.post('/token', asyncHandler(generateRtcTokenWithUid));

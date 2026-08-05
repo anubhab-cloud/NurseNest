@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Menu, X, Phone, User, LogOut, LayoutDashboard,
+  Menu, X, User, LogOut, LayoutDashboard,
   Home, Briefcase, Info, BookOpen, Mail, Tag, Calendar,
-  Sparkles, ShieldCheck, ChevronRight, ArrowRight
+  ChevronRight, ArrowRight, Sparkles, Phone, ShieldCheck, Bell
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import NurseNestLogo from '../brand/NurseNestLogo';
@@ -60,119 +60,117 @@ export default function Navbar() {
 
   return (
     <>
-      {/* ─── Fixed Header Wrapper ────────────────────────────────────────────── */}
-      <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none transition-all duration-300">
-        
-        {/* ─── 1. Top Announcement & Emergency Hotline Bar ───────────────────── */}
-        <div className={`pointer-events-auto bg-slate-900/80 backdrop-blur-md text-white text-xs py-1.5 transition-all duration-300 ${scrolled ? 'hidden lg:block border-b border-slate-800/50' : 'block border-b border-slate-800/30'}`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 font-semibold px-2.5 py-0.5 rounded-full border border-emerald-500/20 text-[11px]">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                24/7 Home Nursing Active
-              </span>
-              <span className="hidden md:inline text-slate-300 text-[11px] font-medium">
-                Certified ICU, Elderly & Caregiver Specialists Available Near You
-              </span>
-            </div>
+      {/* ═══ Fixed Full-Width Header ═══════════════════════════════════════════ */}
+      <div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? 'shadow-lg' : ''
+      }`}>
 
-            <div className="flex items-center gap-4">
-              <a 
-                href="tel:1800000000" 
-                className="flex items-center gap-1.5 text-slate-200 hover:text-white font-medium transition-colors text-[11px]"
+        {/* ── Top Announcement Bar ──────────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className={`bg-white border-b border-slate-100 transition-all duration-300 ${
+            scrolled ? 'hidden' : 'block'
+          }`}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between">
+            {/* Left: trust badges */}
+            <div className="flex items-center gap-4 text-[12px] text-slate-600">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                <span>Trusted by <strong className="text-slate-800 font-semibold">10,000+</strong> families</span>
+              </div>
+              <span className="text-slate-200 hidden sm:inline">·</span>
+              <div className="hidden sm:flex items-center gap-1.5">
+                <Bell className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                <span>24/7 Care Support</span>
+              </div>
+            </div>
+            {/* Right: phone + NABH */}
+            <div className="flex items-center gap-3 text-[12px] text-slate-600">
+              <a
+                href="tel:1800000000"
+                className="flex items-center gap-1.5 hover:text-blue-600 transition-colors"
               >
-                <Phone className="w-3 h-3 text-teal-400" />
-                <span>Toll-Free: <strong className="text-white">1800-000-000</strong></span>
+                <Phone className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>Toll Free: <strong className="font-semibold">1800-000-000</strong></span>
               </a>
-              <span className="hidden sm:inline text-slate-700">|</span>
-              <div className="hidden sm:flex items-center gap-1 text-slate-300 text-[11px]">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                <span>100% NABH Verified Care</span>
+              <span className="text-slate-200 hidden md:inline">·</span>
+              <div className="hidden md:flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                <span>NABH Verified Care</span>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* ─── 2. Main Navigation Bar ────────────────────────────────────────── */}
+        {/* ── Main Navigation Row ───────────────────────────────────────────── */}
         <motion.header
-          initial={{ y: -50, opacity: 0 }}
+          initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className={`pointer-events-auto transition-all duration-300 ${
-            scrolled
-              ? 'py-2 sm:py-3 px-3 sm:px-6'
-              : 'py-3 sm:py-4 px-3 sm:px-6'
-          }`}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="bg-white border-b border-slate-100"
         >
-          <div className={`max-w-7xl mx-auto transition-all duration-300 rounded-2xl sm:rounded-full ${
-            scrolled
-              ? 'bg-white/85 backdrop-blur-xl border border-slate-200/80 shadow-xl shadow-slate-900/5 px-4 sm:px-6 py-2.5'
-              : 'bg-transparent border-transparent shadow-none px-4 sm:px-6 py-3'
-          }`}>
-            <div className="flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16 lg:h-[70px] gap-6">
 
-              {/* Brand Logo */}
-              <Link 
-                to="/" 
-                className="shrink-0 flex items-center group transition-transform duration-200 active:scale-95" 
+              {/* Logo */}
+              <Link
+                to="/"
+                className="shrink-0 flex items-center transition-transform duration-200 active:scale-95"
                 style={{ minHeight: 'unset', minWidth: 'unset' }}
               >
-                <NurseNestLogo size={36} />
+                <NurseNestLogo size={38} />
               </Link>
 
               {/* Desktop Navigation Links */}
-              <nav className={`hidden lg:flex items-center gap-1 p-1.5 rounded-full transition-all duration-300 ${
-                scrolled
-                  ? 'bg-slate-100/70 border border-slate-200/50'
-                  : 'bg-white/50 backdrop-blur-md border border-white/80 shadow-sm'
-              }`}>
+              <nav className="hidden lg:flex items-center gap-0.5 flex-1 justify-center">
                 {navLinks.map(l => {
                   const active = isActive(l.href);
                   return (
                     <Link
-                      key={l.href} 
+                      key={l.href}
                       to={l.href}
-                      className={`relative px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 ${
-                        active ? 'text-blue-700 font-bold' : 'text-slate-600 hover:text-slate-900'
+                      className={`relative px-4 py-2 rounded-full text-[14px] font-medium transition-all duration-200 ${
+                        active
+                          ? 'text-blue-700 font-semibold'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                       }`}
                       style={{ minHeight: 'unset', minWidth: 'unset' }}
                     >
                       {active && (
                         <motion.div
-                          layoutId="active-pill"
-                          className="absolute inset-0 bg-white rounded-full shadow-sm border border-blue-200/60"
+                          layoutId="nav-active-pill"
+                          className="absolute inset-0 bg-blue-50 rounded-full"
                           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                         />
                       )}
-                      <span className="relative z-10 flex items-center gap-1.5">
-                        <l.icon className={`w-3.5 h-3.5 ${active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                        {l.label}
-                      </span>
+                      <span className="relative z-10">{l.label}</span>
                     </Link>
                   );
                 })}
               </nav>
 
-              {/* Right Side Actions */}
-              <div className="hidden lg:flex items-center gap-3">
+              {/* Right Actions */}
+              <div className="hidden lg:flex items-center gap-2 shrink-0">
                 {isAuthenticated ? (
                   <div className="relative" ref={menuRef}>
                     <button
                       onClick={() => setUserMenu(v => !v)}
-                      className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200/80 border border-slate-200 transition-all"
+                      className="flex items-center gap-2 px-3 py-2 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all"
                       style={{ minHeight: 'unset', minWidth: 'unset' }}
                     >
                       {user?.avatar ? (
-                        <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border border-white shadow-sm bg-slate-200 relative">
+                        <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border border-white shadow-sm">
                           <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover rounded-full" />
                         </div>
                       ) : (
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
                           {user?.firstName?.[0]}{user?.lastName?.[0]}
                         </div>
                       )}
-                      <span className="text-xs font-semibold text-slate-800">{user?.firstName}</span>
+                      <span className="text-[14px] font-medium text-slate-800">{user?.firstName}</span>
                     </button>
 
                     <AnimatePresence>
@@ -196,9 +194,9 @@ export default function Navbar() {
                               { icon: LayoutDashboard, label: 'Dashboard', href: dashPath },
                               { icon: User, label: 'Profile Settings', href: dashPath },
                             ].map(item => (
-                              <Link 
-                                key={item.href} 
-                                to={item.href} 
+                              <Link
+                                key={item.href}
+                                to={item.href}
                                 onClick={() => setUserMenu(false)}
                                 className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors"
                                 style={{ minHeight: 'unset', minWidth: 'unset' }}
@@ -206,7 +204,7 @@ export default function Navbar() {
                                 <item.icon className="w-4 h-4 text-slate-400" /> {item.label}
                               </Link>
                             ))}
-                            <button 
+                            <button
                               onClick={handleLogout}
                               className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors mt-1"
                             >
@@ -219,27 +217,20 @@ export default function Navbar() {
                   </div>
                 ) : (
                   <>
-                    <Link 
+                    <Link
                       to="/login"
-                      className="text-xs font-semibold text-slate-700 hover:text-blue-600 px-4 py-2 rounded-full hover:bg-slate-100/80 transition-all"
+                      className="text-[14px] font-medium text-slate-700 hover:text-blue-600 px-4 py-2.5 rounded-full hover:bg-slate-50 transition-all"
                       style={{ minHeight: 'unset', minWidth: 'unset' }}
                     >
                       Sign In
                     </Link>
-                    <Link 
+                    <Link
                       to="/booking"
-                      className="group relative inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 via-teal-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-full shadow-lg shadow-teal-500/25 hover:shadow-xl hover:shadow-teal-500/40 hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 overflow-hidden border border-white/20"
+                      className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-[14px] font-semibold px-5 py-2.5 rounded-full shadow-md shadow-blue-200/80 hover:shadow-lg hover:shadow-blue-300/60 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
                       style={{ minHeight: 'unset', minWidth: 'unset' }}
                     >
-                      {/* Shimmer sweep effect */}
-                      <span className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out" />
-                      
-                      <Sparkles className="w-3.5 h-3.5 text-yellow-300 animate-pulse flex-shrink-0" />
-                      <span className="relative z-10">Book Consult</span>
-                      <span className="relative z-10 bg-emerald-400/25 text-emerald-200 text-[10px] font-extrabold px-1.5 py-0.5 rounded-md border border-emerald-300/30 tracking-widest">
-                        FREE
-                      </span>
-                      <ArrowRight className="w-3.5 h-3.5 text-white/80 group-hover:translate-x-1 group-hover:text-white transition-transform flex-shrink-0" />
+                      Book a Consult
+                      <ArrowRight className="w-4 h-4" />
                     </Link>
                   </>
                 )}

@@ -22,16 +22,8 @@ router.use('/agora', agoraRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/admin', adminRoutes);
-router.use('/blogs', blogRoutes);
-router.use('/reviews', reviewRoutes);
-router.use('/services', servicesRoutes);
-router.use('/ai', aiRoutes);
-router.use('/health', healthRoutes);
-router.use('/medicines', medicineRoutes);
-
-
-// Health check
-router.get('/health', (req, res) => {
+// System Health check (unauthenticated status endpoint)
+const getHealthStatus = (req: any, res: any) => {
   res.json({
     success: true,
     message: 'Homecare API is running',
@@ -39,6 +31,16 @@ router.get('/health', (req, res) => {
     uptime: process.uptime(),
     version: '1.0.0',
   });
-});
+};
+
+router.get('/health-check', getHealthStatus);
+router.get('/status', getHealthStatus);
+
+router.use('/blogs', blogRoutes);
+router.use('/reviews', reviewRoutes);
+router.use('/services', servicesRoutes);
+router.use('/ai', aiRoutes);
+router.use('/health', healthRoutes);
+router.use('/medicines', medicineRoutes);
 
 export default router;

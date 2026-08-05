@@ -97,199 +97,215 @@ export default function Home() {
     <div className="overflow-x-hidden">
 
       {/* ══ HERO ═══════════════════════════════════════════════════════════ */}
-      <section className="relative min-h-[100dvh] flex items-center pt-28 sm:pt-32 pb-24 sm:pb-16 bg-animated overflow-hidden">
-        {/* Blob accents */}
-        <div className="absolute top-0 right-0 w-[480px] h-[480px] rounded-full opacity-40"
-          style={{ background: 'radial-gradient(circle, #BAD9FF 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
-        <div className="absolute bottom-0 left-0 w-[360px] h-[360px] rounded-full opacity-30"
-          style={{ background: 'radial-gradient(circle, #99F4E8 0%, transparent 70%)', transform: 'translate(-30%, 30%)' }} />
+      <section
+        className="relative overflow-hidden"
+        style={{ background: 'linear-gradient(160deg, #EEF4FF 0%, #F0F7FF 50%, #E8F0FE 100%)', paddingTop: '108px' }}
+      >
+        {/* Subtle radial glows */}
+        <div className="absolute top-0 right-0 w-[700px] h-[700px] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(191,219,254,0.5) 0%, transparent 60%)', transform: 'translate(25%, -25%)' }} />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(165,180,252,0.25) 0%, transparent 60%)', transform: 'translate(-20%, 20%)' }} />
 
-        <div className="container relative z-10">
-          <div className="grid-12 items-center">
-            {/* Left — 6 cols */}
+        <div className="container relative z-10 pt-8 sm:pt-12 pb-0">
+          <div className="grid-12 items-center pb-10">
+
+            {/* ── Left col — 6 cols ── */}
             <motion.div className="col-span-12 lg:col-span-6"
               initial="hidden" animate="visible" variants={stagger}>
-              {/* Eyebrow */}
+
+              {/* Rating badge */}
               <motion.div variants={fadeUp} {...dur}
-                className="inline-flex items-center gap-2 bg-white border border-gray-100 px-4 py-2 rounded-full mb-8"
-                style={{ boxShadow: 'var(--shadow-1)' }}>
-                <span className="w-2 h-2 bg-teal-500 rounded-full animate-pulse-dot" />
-                <span className="text-xs font-semibold text-gray-600">Rated #1 Home Healthcare Platform 2024</span>
+                className="inline-flex items-center gap-2.5 bg-white border border-blue-100 px-4 py-2 rounded-full mb-8 shadow-sm">
+                <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Star className="w-3.5 h-3.5 text-white fill-white" />
+                </div>
+                <span className="text-[13px] font-semibold text-slate-700">Rated #1 Home Healthcare Platform 2024</span>
               </motion.div>
 
               {/* Headline */}
-              <motion.h1 variants={fadeUp} {...dur} className="mb-6 text-balance">
+              <motion.h1 variants={fadeUp} {...dur}
+                className="mb-6 text-balance"
+                style={{ fontSize: 'clamp(38px, 5vw, 62px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.03em', color: '#0F172A' }}>
                 Professional Care,{' '}
-                <span className="text-gradient">Right at Your Home</span>
+                <br className="hidden sm:block" />
+                Right at{' '}
+                <span style={{ color: '#2563EB', fontStyle: 'italic', fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                  Your Home.
+                </span>
               </motion.h1>
 
-              {/* Body */}
-              <motion.p variants={fadeUp} {...dur} className="text-body mb-8 max-w-[480px]">
-                Connect with <strong className="font-semibold text-gray-900">500+ certified caregivers</strong> for elder
-                care, nursing, physiotherapy, and more. Available 24/7. Confirmed in minutes.
+              {/* Description */}
+              <motion.p variants={fadeUp} {...dur}
+                className="mb-8 max-w-[480px]"
+                style={{ fontSize: '17px', lineHeight: 1.75, color: '#475569' }}>
+                Connect with{' '}
+                <strong className="font-semibold text-slate-800">500+ certified caregivers</strong>{' '}
+                for elder care, nursing, physiotherapy and more. Available 24/7.
+                Confirmed in minutes.
               </motion.p>
 
               {/* CTAs */}
-              <motion.div variants={fadeUp} {...dur} className="flex flex-col sm:flex-row gap-4 mb-10 items-stretch sm:items-center">
-                <Link 
-                  to="/booking" 
-                  className="group relative inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-blue-600 via-teal-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-extrabold text-sm uppercase tracking-wider px-8 py-4 rounded-2xl shadow-xl shadow-teal-500/25 hover:shadow-2xl hover:shadow-teal-500/40 hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 overflow-hidden border border-white/20"
+              <motion.div variants={fadeUp} {...dur}
+                className="flex flex-col sm:flex-row gap-3 mb-10 items-stretch sm:items-center">
+                <Link
+                  to="/booking"
+                  className="group inline-flex items-center justify-center gap-2.5 text-white font-bold text-[15px] px-7 py-4 rounded-2xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ background: '#2563EB', boxShadow: '0 8px 24px rgba(37,99,235,0.35)', minHeight: 'unset', minWidth: 'unset' }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#1D4ED8'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#2563EB'}
                 >
-                  <span className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out" />
-                  <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse flex-shrink-0" />
-                  <span className="relative z-10">Book Consultation</span>
-                  <span className="relative z-10 bg-emerald-400/30 text-emerald-100 text-xs font-black px-2 py-0.5 rounded-md border border-emerald-300/40 tracking-widest">
-                    FREE
-                  </span>
-                  <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                  Book Consultation
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
 
-                <Link to="/services" className="btn btn-secondary btn-lg rounded-2xl px-6">
-                  Explore Services
+                <Link
+                  to="/services"
+                  className="inline-flex items-center justify-center gap-2.5 bg-white border border-slate-200 text-slate-700 font-semibold text-[15px] px-6 py-4 rounded-2xl hover:bg-slate-50 transition-all duration-200 shadow-sm"
+                  style={{ minHeight: 'unset', minWidth: 'unset' }}
+                >
+                  <span className="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center flex-shrink-0">
+                    <span className="text-slate-600 text-xs ml-0.5">▶</span>
+                  </span>
+                  How It Works
                 </Link>
               </motion.div>
 
               {/* Trust badges */}
               <motion.div variants={fadeUp} {...dur} className="flex flex-wrap gap-3">
                 {[
-                  { icon: Shield,       text: 'Background Verified' },
-                  { icon: CheckCircle,  text: 'ISO Certified'       },
-                  { icon: Star,         text: '4.9 / 5 Rating'       },
+                  { icon: Shield, text: 'Background Verified' },
+                  { icon: CheckCircle, text: 'ISO Certified' },
+                  { icon: Star, text: '4.9 / 5 Rating' },
                 ].map(b => (
                   <div key={b.text}
-                    className="flex items-center gap-2 bg-white border border-gray-100 px-3 py-2 rounded-lg"
-                    style={{ boxShadow: 'var(--shadow-1)' }}>
-                    <b.icon className="w-3.5 h-3.5 text-blue-500" />
-                    <span className="text-xs font-semibold text-gray-700">{b.text}</span>
+                    className="flex items-center gap-2 bg-white/80 border border-slate-200 px-3.5 py-2 rounded-xl shadow-sm"
+                    style={{ fontSize: '13px', fontWeight: 500, color: '#475569' }}>
+                    <b.icon className="w-4 h-4 flex-shrink-0" style={{ color: '#2563EB' }} />
+                    {b.text}
                   </div>
                 ))}
               </motion.div>
             </motion.div>
 
-            {/* Right — 3D Nurse Model on Desktop / Mobile Live Status Card on Mobile */}
-            <motion.div className="col-span-12 lg:col-span-5 lg:col-start-8 mt-8 lg:mt-0 flex items-center justify-center"
-              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+            {/* ── Right col — 3D Model + floating cards ── */}
+            <motion.div className="col-span-12 lg:col-span-5 lg:col-start-8 mt-10 lg:mt-0 flex items-center justify-center"
+              initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}>
               <div className="relative w-full max-w-md lg:max-w-none">
-                {/* Background pill glow */}
-                <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 h-[300px] sm:h-[380px] rounded-3xl opacity-20 blur-3xl pointer-events-none"
-                  style={{ background: 'linear-gradient(135deg, #2563EB, #14B8A6)' }} />
+                {/* Soft blue glow behind model */}
+                <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-[320px] sm:h-[420px] rounded-full opacity-30 blur-3xl pointer-events-none"
+                  style={{ background: 'linear-gradient(135deg, #93C5FD, #818CF8)' }} />
 
                 {/* Desktop 3D Model */}
                 <div className="hidden lg:block">
                   <Suspense fallback={
-                    <div className="flex items-center justify-center h-[480px]">
+                    <div className="flex items-center justify-center h-[500px]">
                       <div className="w-12 h-12 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin" />
                     </div>
                   }>
-                    <NurseModel height={480} interactive />
+                    <NurseModel height={500} interactive />
                   </Suspense>
                 </div>
 
-                {/* Mobile & Tablet Interactive Live Caregiver Card */}
-                <div className="lg:hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 rounded-3xl p-5 shadow-xl shadow-slate-900/10 space-y-4">
+                {/* Mobile interactive card */}
+                <div className="lg:hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 rounded-3xl p-5 shadow-xl space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
                       <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Live Healthcare Status</span>
                     </div>
-                    <span className="bg-emerald-50 text-emerald-700 text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-emerald-200/60">
-                      ACTIVE NEAR YOU
-                    </span>
+                    <span className="bg-emerald-50 text-emerald-700 text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-emerald-200/60">ACTIVE NEAR YOU</span>
                   </div>
-
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-blue-50/70 border border-blue-100 rounded-2xl p-3 flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
-                        ⚡
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-slate-500 font-semibold uppercase">Response</p>
-                        <p className="text-xs font-extrabold text-slate-900">In 28 Mins</p>
-                      </div>
+                      <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">⚡</div>
+                      <div><p className="text-[10px] text-slate-500 font-semibold uppercase">Response</p><p className="text-xs font-extrabold text-slate-900">In 28 Mins</p></div>
                     </div>
-
-                    <div className="bg-teal-50/70 border border-teal-100 rounded-2xl p-3 flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-teal-500 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
-                        ⭐
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-slate-500 font-semibold uppercase">Rating</p>
-                        <p className="text-xs font-extrabold text-slate-900">4.9 / 5.0 (10k+)</p>
-                      </div>
+                    <div className="bg-blue-50/70 border border-blue-100 rounded-2xl p-3 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">⭐</div>
+                      <div><p className="text-[10px] text-slate-500 font-semibold uppercase">Rating</p><p className="text-xs font-extrabold text-slate-900">4.9 / 5.0 (10k+)</p></div>
                     </div>
                   </div>
-
                   <div className="flex items-center justify-between bg-slate-50 border border-slate-200/60 rounded-2xl p-3 text-xs">
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span className="font-semibold text-slate-700">100% NABH & Police Verified</span>
-                    </div>
+                    <div className="flex items-center gap-2"><Shield className="w-4 h-4 text-blue-600 shrink-0" /><span className="font-semibold text-slate-700">100% NABH &amp; Police Verified</span></div>
                     <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
                   </div>
                 </div>
 
-                {/* Floating badge — arriving (Desktop) */}
-                <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                  className="hidden lg:flex absolute left-0 bottom-28 card px-4 py-3 items-center gap-3"
-                  style={{ width: '196px', boxShadow: 'var(--shadow-2)' }}>
-                  <div className="icon-box-md" style={{ background: '#ECFDF5' }}>
-                    <Navigation className="w-4 h-4 text-green-600" />
+                {/* Floating card — Caregiver Arriving (Desktop) */}
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+                  className="hidden lg:flex absolute left-0 bottom-32 bg-white rounded-2xl p-4 items-center gap-3 shadow-xl border border-slate-100"
+                  style={{ width: '200px' }}
+                >
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#EFF6FF' }}>
+                    <Navigation className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-micro">Caregiver Arriving</p>
-                    <p className="font-bold text-gray-900 text-sm">In 28 minutes</p>
+                    <p className="text-[11px] text-slate-500 font-medium">Caregiver Arriving</p>
+                    <p className="text-2xl font-extrabold text-slate-900 leading-none">28 <span className="text-base font-bold">mins</span></p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Near You</p>
                   </div>
                 </motion.div>
 
-                {/* Floating badge — rating (Desktop) */}
-                <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
-                  className="hidden lg:flex absolute right-0 bottom-16 card px-4 py-3 items-center gap-3"
-                  style={{ width: '180px', boxShadow: 'var(--shadow-2)' }}>
-                  <div className="icon-box-md" style={{ background: '#FFFBEB' }}>
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                {/* Floating card — Health Check (Desktop) */}
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
+                  className="hidden lg:flex absolute right-0 top-20 bg-white rounded-2xl p-4 flex-col gap-1.5 shadow-xl border border-slate-100"
+                  style={{ width: '192px' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-500" />
+                    <span className="text-[11px] font-semibold text-slate-500">Health Check</span>
                   </div>
-                  <div>
-                    <p className="text-micro">Avg. Rating</p>
-                    <p className="font-bold text-gray-900 text-sm">4.9 / 5.0 ⭐</p>
+                  <p className="text-lg font-extrabold text-emerald-600">Normal</p>
+                  <div className="text-[11px] text-slate-500 space-y-0.5">
+                    <p>BP: 120/80 mmHg</p>
+                    <p>Pulse: 72 bpm</p>
                   </div>
+                  <svg viewBox="0 0 120 30" className="w-full h-6 mt-1" fill="none">
+                    <polyline
+                      points="0,15 15,15 25,4 35,26 45,15 60,15 70,8 80,22 90,15 105,15 120,15"
+                      stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    />
+                  </svg>
                 </motion.div>
               </div>
             </motion.div>
           </div>
-        </div>
 
-        {/* Scroll cue */}
-        <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 text-gray-400">
-          <span className="text-micro">Scroll to explore</span>
-          <ChevronDown className="w-4 h-4" />
-        </motion.div>
-      </section>
-
-      {/* ══ STATS BAR ══════════════════════════════════════════════════════ */}
-      <section className="py-12 sm:py-16" style={{ background: 'linear-gradient(135deg, #1D77F2 0%, #14B8A4 100%)' }}>
-        <div className="container">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
-            {STATS.map((s, i) => (
-              <motion.div 
-                key={s.label} 
-                initial={{ opacity: 0, y: 20 }} 
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} 
-                transition={{ delay: i * 0.08, duration: 0.4 }} 
-                className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 sm:p-6 text-center"
-              >
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/20 flex items-center justify-center mx-auto mb-2 sm:mb-3">
-                  <s.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <p className="text-2xl sm:text-4xl font-extrabold font-display text-white mb-1 tracking-tight">
-                  <Counter end={s.end} suffix={s.suffix} />
-                </p>
-                <p className="text-xs sm:text-sm font-medium text-white/80">{s.label}</p>
-              </motion.div>
-            ))}
-          </div>
+          {/* ── Stats Row (white card strip at hero bottom) ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="bg-white rounded-t-2xl border border-slate-100 border-b-0 shadow-lg overflow-hidden"
+          >
+            <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-slate-100">
+              {[
+                { icon: Heart,      value: '10,000+',  label: 'Happy Families'       },
+                { icon: UserCheck,  value: '500+',     label: 'Verified Caregivers'  },
+                { icon: Calendar,   value: '50,000+',  label: 'Appointments Done'    },
+                { icon: Headphones, value: '24/7',     label: 'Care Support'         },
+              ].map((s, i) => (
+                <motion.div key={s.label}
+                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.6 + i * 0.08 }}
+                  className="flex items-center gap-4 px-6 py-5"
+                >
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#EFF6FF' }}>
+                    <s.icon className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-extrabold text-slate-900 leading-none">{s.value}</p>
+                    <p className="text-sm text-slate-500 mt-0.5">{s.label}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </section>
 

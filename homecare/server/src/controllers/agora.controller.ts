@@ -14,10 +14,10 @@ export const generateRtcToken = async (req: Request, res: Response): Promise<voi
   const userId = req.user!.userId;
   const userRole = req.user!.role;
 
-  // Validate Agora credentials are configured
-  if (!config.agora.appId || config.agora.appId === 'demo') {
-    throw new ApiError(500, 'Video consultation service is not configured');
-  }
+  // Validate or fallback Agora credentials
+  const appId = config.agora.appId && config.agora.appId !== 'demo'
+    ? config.agora.appId
+    : 'f5cc87b307fe4202b165ff7cde4197e5';
 
   // Verify the booking exists and user is a participant (or allow fallback for demo calls)
   let channelName = `consultation-${bookingId}`;
@@ -48,7 +48,7 @@ export const generateRtcToken = async (req: Request, res: Response): Promise<voi
   if (config.agora.appCertificate && config.agora.appCertificate.trim() !== '') {
     const role = RtcRole.PUBLISHER;
     token = RtcTokenBuilder.buildTokenWithUid(
-      config.agora.appId,
+      appId,
       config.agora.appCertificate,
       channelName,
       uid,
@@ -64,7 +64,7 @@ export const generateRtcToken = async (req: Request, res: Response): Promise<voi
       token,
       channelName,
       uid,
-      appId: config.agora.appId,
+      appId,
       expiresAt: new Date(privilegeExpiredTs * 1000).toISOString(),
     },
   });
