@@ -12,6 +12,7 @@ import {
 import { useAuth, api } from '../../context/AuthContext';
 import NurseNestLogo from '../../components/brand/NurseNestLogo';
 import AgoraVideoCall from '../../components/AgoraVideoCall';
+import ChatDrawer from '../../components/ChatDrawer';
 
 
 // ─── Mock Data ─────────────────────────────────────────────────────────────────
@@ -115,9 +116,11 @@ export default function PatientDashboard() {
   const [showAddMed, setShowAddMed] = useState(false);
   const [newMed, setNewMed] = useState({ name: '', dosage: '1 tablet', time: '8:00 AM', type: 'General' });
 
-  // Video call state
+  // Video call & Chat state
   const [videoCallActive, setVideoCallActive] = useState(false);
   const [activeCallBookingId, setActiveCallBookingId] = useState<string>('demo');
+  const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
+  const [activeChatBookingId, setActiveChatBookingId] = useState<string>('quick');
 
   // UI state & refs
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -687,7 +690,11 @@ export default function PatientDashboard() {
               <button className="flex-1 flex items-center justify-center gap-2 bg-primary-50 text-primary-700 py-3 rounded-xl text-sm font-semibold hover:bg-primary-100 transition-colors" style={{ minHeight: 'unset', minWidth: 'unset' }}>
                 <Phone className="w-4 h-4" /> Call Caregiver
               </button>
-              <button className="flex-1 flex items-center justify-center gap-2 bg-teal-50 text-teal-700 py-3 rounded-xl text-sm font-semibold hover:bg-teal-100 transition-colors" style={{ minHeight: 'unset', minWidth: 'unset' }}>
+              <button
+                onClick={() => { setActiveChatBookingId('quick'); setChatDrawerOpen(true); }}
+                className="flex-1 flex items-center justify-center gap-2 bg-teal-50 text-teal-700 py-3 rounded-xl text-sm font-semibold hover:bg-teal-100 transition-colors"
+                style={{ minHeight: 'unset', minWidth: 'unset' }}
+              >
                 <MessageSquare className="w-4 h-4" /> Message
               </button>
             </div>
@@ -1720,6 +1727,14 @@ export default function PatientDashboard() {
           })}
         </div>
       </div>
+
+      {/* Real-time Patient-Nurse Chat Modal */}
+      <ChatDrawer
+        isOpen={chatDrawerOpen}
+        onClose={() => setChatDrawerOpen(false)}
+        bookingId={activeChatBookingId}
+        receiverName="Dr. Priya Nair (Assigned Caregiver)"
+      />
     </div>
   );
 }

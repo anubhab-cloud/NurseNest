@@ -12,6 +12,7 @@ import servicesRoutes from './services.routes';
 import aiRoutes from './ai.routes';
 import healthRoutes from './health.routes';
 import medicineRoutes from './medicine.routes';
+import chatRoutes from './chat.routes';
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.use('/agora', agoraRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/admin', adminRoutes);
+router.use('/chat', chatRoutes);
 // System Health check (unauthenticated status endpoint)
 const getHealthStatus = (req: any, res: any) => {
   res.json({

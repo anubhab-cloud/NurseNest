@@ -99,10 +99,11 @@ export const initializeSocket = (httpServer: HttpServer): Server => {
       bookingId: string;
       receiverId: string;
       content: string;
-      messageType?: 'text' | 'image' | 'file';
+      fileUrl?: string;
+      messageType?: 'text' | 'image' | 'file' | 'audio';
     }) => {
       try {
-        const { bookingId, receiverId, content, messageType = 'text' } = data;
+        const { bookingId, receiverId, content, fileUrl, messageType = 'text' } = data;
         const roomId = `chat:${bookingId}`;
 
         // Save to MongoDB
@@ -113,6 +114,7 @@ export const initializeSocket = (httpServer: HttpServer): Server => {
           receiverId,
           messageType,
           content,
+          fileUrl,
         });
 
         // Update conversation's last message
@@ -136,6 +138,7 @@ export const initializeSocket = (httpServer: HttpServer): Server => {
           senderName: userName,
           receiverId,
           content,
+          fileUrl,
           messageType,
           createdAt: message.createdAt,
           isRead: false,

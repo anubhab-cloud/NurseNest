@@ -7,7 +7,7 @@ export interface IChatMessage extends Document {
   bookingId: mongoose.Types.ObjectId;
   senderId: mongoose.Types.ObjectId;
   receiverId: mongoose.Types.ObjectId;
-  messageType: 'text' | 'image' | 'file' | 'system';
+  messageType: 'text' | 'image' | 'file' | 'audio' | 'system';
   content: string;
   fileUrl?: string;
   isRead: boolean;
@@ -57,7 +57,7 @@ const chatMessageSchema = new Schema<IChatMessage>(
     },
     messageType: {
       type: String,
-      enum: ['text', 'image', 'file', 'system'],
+      enum: ['text', 'image', 'file', 'audio', 'system'],
       default: 'text',
     },
     content: {
