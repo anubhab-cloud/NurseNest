@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { Booking, NurseProfile } from '../models';
 import { Conversation } from '../models/ChatMessage';
 import { ApiError } from '../middleware/errorHandler';
+import { publishBookingEvent, publishSosAlertEvent } from '../services/kafka.service';
 
 // ─── Create Booking (With Double-Booking Prevention) ───────────────────────────
 // Uses MongoDB's findOneAndUpdate with atomic filters as a locking mechanism.
@@ -121,6 +122,11 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
 
     await session.commitTransaction();
 
+    // Publish Kafka Booking Created event asynchronously
+    publishBookingEvent('CREATED', booking[0]).catch(err =>
+      console.error('[Kafka Event Error] Failed to publish BOOKING_CREATED:', err)
+    );
+
     res.status(201).json({
       success: true,
       message: 'Booking created successfully',
@@ -194,6 +200,12 @@ export const updateBookingStatus = async (req: Request, res: Response): Promise<
 
   await booking.save();
 
+  // Publish Kafka status update event
+  const statusEventName = status.toUpperCase().replace('-', '_') as any;
+  publishBookingEvent(statusEventName, booking).catch(err =>
+    console.error('[Kafka Event Error] Failed to publish booking status event:', err)
+  );
+
   res.json({
     success: true,
     message: `Booking status updated to ${status}`,
@@ -253,14 +265,20 @@ export const getMyBookings = async (req: Request, res: Response): Promise<void> 
 export const triggerSOS = async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
   const { location, timestamp } = req.body;
+  const alertId = `SOS-${Date.now()}`;
 
   console.warn(`[EMERGENCY SOS TRIGGERED] User: ${userId}, Time: ${timestamp || new Date().toISOString()}, Location: ${location || 'Unknown'}`);
+
+  // Publish Kafka Emergency SOS Alert event
+  publishSosAlertEvent({ alertId, userId, location }).catch(err =>
+    console.error('[Kafka Event Error] Failed to publish SOS_ALERT:', err)
+  );
 
   res.json({
     success: true,
     message: 'Emergency SOS alert received and dispatched to emergency team.',
     data: {
-      alertId: `SOS-${Date.now()}`,
+      alertId,
       status: 'dispatched',
       dispatchedAt: new Date().toISOString(),
     },

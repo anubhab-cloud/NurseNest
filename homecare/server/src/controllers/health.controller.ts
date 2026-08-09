@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import HealthRecord from '../models/HealthRecord';
 import { ApiError } from '../middleware/errorHandler';
+import { publishVitalsLoggedEvent } from '../services/kafka.service';
 
 // Get health records for logged-in patient
 export const getMyHealthRecords = async (req: Request, res: Response): Promise<void> => {
@@ -31,6 +32,11 @@ export const createHealthRecord = async (req: Request, res: Response): Promise<v
     notes,
     recordedAt: new Date(),
   });
+
+  // Publish Kafka vitals event asynchronously
+  publishVitalsLoggedEvent(record.toObject()).catch(err =>
+    console.error('[Kafka Event Error] Failed to publish VITALS_RECORDED:', err)
+  );
 
   res.status(201).json({
     success: true,

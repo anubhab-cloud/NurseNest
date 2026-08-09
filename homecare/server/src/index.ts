@@ -10,6 +10,8 @@ import { config } from './config/env';
 import { connectDatabase } from './config/database';
 import { initializeSocket } from './socket';
 import { initializeScheduler } from './services/scheduler.service';
+import { initializeKafka } from './config/kafka';
+import { startKafkaConsumers } from './services/kafka.service';
 import { errorHandler } from './middleware/errorHandler';
 import routes from './routes';
 
@@ -87,6 +89,12 @@ const startServer = async () => {
   try {
     await connectDatabase();
 
+    // Initialize Kafka Event Streaming
+    const kafkaReady = await initializeKafka();
+    if (kafkaReady) {
+      await startKafkaConsumers();
+    }
+
     httpServer.listen(config.port, () => {
       console.log(`
 ╔══════════════════════════════════════════════════════════╗
@@ -95,6 +103,7 @@ const startServer = async () => {
 ║  Environment : ${config.env.padEnd(40)}║
 ║  Port        : ${String(config.port).padEnd(40)}║
 ║  Socket.io   : Enabled with Redis adapter               ║
+║  Kafka       : ${kafkaReady ? 'Connected (Event Streaming Enabled) '.padEnd(40) : 'Offline (Fallback Mode)             '.padEnd(40)}║
 ║  API Base    : /api/v1                                   ║
 ╚══════════════════════════════════════════════════════════╝
       `);

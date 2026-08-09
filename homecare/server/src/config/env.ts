@@ -46,4 +46,10 @@ export const config = {
   gemini: {
     apiKey: process.env.GEMINI_API_KEY || '',
   },
+
+  kafka: {
+    brokers: (process.env.KAFKA_BROKERS || 'localhost:9092').split(','),
+    clientId: process.env.KAFKA_CLIENT_ID || 'nursenest-backend',
+    enabled: process.env.KAFKA_ENABLED !== 'false',
+  },
 } as const;
