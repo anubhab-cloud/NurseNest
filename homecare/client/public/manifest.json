@@ -1,0 +1,25 @@
+{
+  "short_name": "NurseNest",
+  "name": "NurseNest - Home Healthcare Platform",
+  "description": "Professional home healthcare, elder care, nursing, physiotherapy, and 24/7 video consultations.",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 180x180",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#EEF4FF",
+  "theme_color": "#2563EB",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "categories": ["medical", "health", "lifestyle"]
+}

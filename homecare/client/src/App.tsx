@@ -5,6 +5,7 @@ import { useSmoothScroll } from './hooks/useSmoothScroll';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import ErrorBoundary from './components/ErrorBoundary';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 // Pages
 import Home from './pages/Home';
@@ -99,6 +100,7 @@ export default function App() {
         <BrowserRouter>
           <Suspense fallback={<Spinner />}>
             <AppRoutes />
+            <PWAInstallPrompt />
           </Suspense>
         </BrowserRouter>
       </AuthProvider>
