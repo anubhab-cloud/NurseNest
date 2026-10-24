@@ -23,4 +23,7 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default phase => ({
+  ...nextConfig,
+  distDir: phase === "phase-development-server" ? ".next-dev" : ".next",
+});
