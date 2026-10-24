@@ -15,7 +15,9 @@ export async function apiFetch<T>(
     },
   });
 
-  const json = (await res.json()) as ApiResponse<T>;
+  const json = (await res.json().catch(() => null)) as ApiResponse<T> | null;
+  if (!json) throw new Error("The service is temporarily unavailable. Please try again.");
+  if (!res.ok && json.success) throw new Error(`Request failed (${res.status})`);
   if (!json.success) {
     throw new Error(json.error);
   }
@@ -26,7 +28,7 @@ export async function apiFetchServer<T>(
   path: string,
   cookieHeader?: string,
 ): Promise<T> {
-  const base = process.env["INTERNAL_API_URL"] ?? "http://localhost:3001";
+  const base = process.env["INTERNAL_API_URL"] ?? "http://127.0.0.1:8080";
   const res = await fetch(`${base}${path}`, {
     headers: {
       "Content-Type": "application/json",

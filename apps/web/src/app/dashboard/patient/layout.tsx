@@ -5,6 +5,7 @@ const links = [
   { href: "/dashboard/patient/vitals", label: "Vitals" },
   { href: "/dashboard/patient/bookings", label: "Bookings" },
   { href: "/dashboard/patient/book-now", label: "Book Now" },
+  { href: "/dashboard/patient/records", label: "Records" },
   { href: "/dashboard/patient/messages", label: "Messages" },
   { href: "/dashboard/patient/profile", label: "Profile" },
 ];

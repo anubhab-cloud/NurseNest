@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { assertFuture, assertTransition } from "../lib/booking-policy.js";
 import { z } from "zod";
 import { apiSuccess } from "@nursenest/types";
 import {
@@ -10,16 +11,19 @@ import {
 import { authenticate, requireRoles } from "../middleware/auth.js";
 import { bookingRepository } from "../repositories/booking.repository.js";
 import { serviceRepository } from "../repositories/service.repository.js";
+import { nurseRepository } from "../repositories/nurse.repository.js";
+import { reviewRepository } from "../repositories/review.repository.js";
+import { toReview } from "../lib/mappers.js";
 import { invoiceRepository } from "../repositories/invoice.repository.js";
-import { toBooking } from "../lib/mappers.js";
+import { toBooking, toNurseBooking } from "../lib/mappers.js";
 import { emitBookingStatus, notifyUser } from "../services/notification.service.js";
 import { Role, BookingStatus } from "@nursenest/db";
 
 const createBookingSchema = z.object({
   serviceId: z.string(),
   nurseId: z.string().optional(),
-  scheduledAt: z.string(),
-  notes: z.string().optional(),
+  scheduledAt: z.string().datetime({ offset: true }),
+  notes: z.string().max(4000).optional(),
 });
 
 const statusSchema = z.object({
@@ -33,6 +37,7 @@ export async function bookingsRoutes(app: FastifyInstance): Promise<void> {
     const data = parseOrThrow(createBookingSchema, request.body);
     const service = await serviceRepository.findById(data.serviceId);
     if (!service) throw new NotFoundError("Service not found");
+    assertFuture(new Date(data.scheduledAt));
 
     const booking = await bookingRepository.create({
       patientId: request.user!.sub,
@@ -42,7 +47,6 @@ export async function bookingsRoutes(app: FastifyInstance): Promise<void> {
       notes: data.notes,
       totalAmount: service.pricePerVisit,
     });
-    await invoiceRepository.create(booking.id, booking.totalAmount);
     if (data.nurseId) {
       const nurseUser = await import("../repositories/user.repository.js").then((m) =>
         m.userRepository.findById(data.nurseId!),
@@ -53,13 +57,23 @@ export async function bookingsRoutes(app: FastifyInstance): Promise<void> {
     }
     return reply.status(201).send(apiSuccess(toBooking(booking)));
   });
+  app.post("/:id/review", { preHandler: [requireRoles(Role.PATIENT)] }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const booking = await bookingRepository.findById(id);
+    if (!booking) throw new NotFoundError("Booking not found");
+    if (booking.patientId !== request.user!.sub) throw new ForbiddenError();
+    if (booking.status !== "COMPLETED" || !booking.nurseId) throw new ValidationError("Only completed nurse visits can be reviewed.");
+    const data = parseOrThrow(z.object({ rating: z.number().int().min(1).max(5), comment: z.string().trim().max(2000).optional() }), request.body);
+    const review = await reviewRepository.create({ ...data, bookingId: id, patientId: request.user!.sub, nurseId: booking.nurseId });
+    return reply.status(201).send(apiSuccess(toReview(review)));
+  });
 
   app.get("/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
     const booking = await bookingRepository.findById(id);
     if (!booking) throw new NotFoundError("Booking not found");
     await assertBookingAccess(request.user!, booking);
-    return reply.send(apiSuccess(toBooking(booking)));
+    return reply.send(apiSuccess(request.user!.role === Role.NURSE ? toNurseBooking(booking) : toBooking(booking)));
   });
 
   app.patch("/:id/status", { preHandler: [requireRoles(Role.NURSE, Role.ADMIN)] }, async (request, reply) => {
@@ -72,11 +86,21 @@ export async function bookingsRoutes(app: FastifyInstance): Promise<void> {
       throw new ForbiddenError("Not assigned to this booking");
     }
 
-    const updated = await bookingRepository.updateStatus(id, status as BookingStatus);
+    assertTransition(booking.status, status as BookingStatus);
+    if (status === "CONFIRMED" && !booking.nurseId) throw new ValidationError("Assign a nurse before confirming.");
+    if (status === "CONFIRMED" || status === "IN_PROGRESS") {
+      const nurse = booking.nurseId ? await nurseRepository.findByUserId(booking.nurseId) : null;
+      if (!nurse?.isVerified) throw new ValidationError("The assigned nurse must complete credential review first.");
+    }
+    const updated = await bookingRepository.updateStatus(id, status as BookingStatus, booking.status);
+    if ((status === "COMPLETED" || status === "CANCELLED") && booking.nurseId &&
+      !await bookingRepository.patientHasActiveNurse(booking.patientId, booking.nurseId)) {
+      app.io.in(`user:${booking.patientId}`).socketsLeave(`nurse:${booking.nurseId}`);
+    }
     const message = `Booking status updated to ${status}`;
     emitBookingStatus(id, status, message);
     await notifyUser(booking.patientId, "Booking Update", message, "booking");
-    return reply.send(apiSuccess(toBooking(updated)));
+    return reply.send(apiSuccess(request.user!.role === Role.NURSE ? toNurseBooking(updated) : toBooking(updated)));
   });
 
   app.delete("/:id", { preHandler: [requireRoles(Role.PATIENT)] }, async (request, reply) => {
@@ -92,7 +116,7 @@ export async function bookingsRoutes(app: FastifyInstance): Promise<void> {
       throw new ValidationError("Cannot cancel within 2 hours of scheduled time");
     }
 
-    const cancelled = await bookingRepository.cancel(id);
+    const cancelled = await bookingRepository.cancel(id, booking.status);
     emitBookingStatus(id, "CANCELLED", "Booking cancelled by patient");
     return reply.send(apiSuccess(toBooking(cancelled)));
   });

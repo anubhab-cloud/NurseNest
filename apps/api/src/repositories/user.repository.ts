@@ -1,8 +1,8 @@
-import { prisma, type Role, type User } from "@nursenest/db";
+import { prisma, type Role, type User, type Prisma } from "@nursenest/db";
 
 export const userRepository = {
   findByEmail(email: string): Promise<User | null> {
-    return prisma.user.findUnique({ where: { email } });
+    return prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
   },
 
   findById(id: string): Promise<User | null> {
@@ -15,6 +15,9 @@ export const userRepository = {
     role: Role;
     phone?: string;
   }): Promise<User> {
+    return prisma.user.create({ data });
+  },
+  register(data: Prisma.UserCreateInput): Promise<User> {
     return prisma.user.create({ data });
   },
 

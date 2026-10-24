@@ -9,7 +9,7 @@ const cookieOptions = {
   secure: env.isProduction,
   sameSite: "lax" as const,
   path: "/",
-  domain: env.cookieDomain === "localhost" ? undefined : env.cookieDomain,
+  domain: !env.cookieDomain || env.cookieDomain === "localhost" ? undefined : env.cookieDomain,
 };
 
 export function setAuthCookies(reply: FastifyReply, accessToken: string, refreshToken: string): void {

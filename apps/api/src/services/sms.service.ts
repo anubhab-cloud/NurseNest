@@ -9,11 +9,11 @@ function getTwilio() {
   return client;
 }
 
-export async function sendCriticalSms(to: string, message: string): Promise<void> {
+export async function sendCriticalSms(to: string, message: string): Promise<boolean> {
   const tw = getTwilio();
   if (!tw || !env.twilioPhoneNumber) {
-    console.info(`[sms stub] to=${to} message=${message}`);
-    return;
+    return false;
   }
   await tw.messages.create({ body: message, from: env.twilioPhoneNumber, to });
+  return true;
 }

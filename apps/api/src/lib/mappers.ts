@@ -57,6 +57,7 @@ export function toNurseProfile(n: NurseProfile): NurseProfileDto {
     rating: n.rating,
     totalVisits: n.totalVisits,
     isAvailable: n.isAvailable,
+    isVerified: n.isVerified,
     currentLat: n.currentLat,
     currentLng: n.currentLng,
   };
@@ -105,6 +106,15 @@ export function toVital(v: VitalRecord): VitalRecordDto {
     temperature: v.temperature,
     recordedAt: v.recordedAt.toISOString(),
   };
+}
+
+export function toNurseBooking(b: Parameters<typeof toBooking>[0]): BookingDto {
+  const result = toBooking(b);
+  if (!["CONFIRMED", "IN_PROGRESS", "COMPLETED"].includes(b.status)) {
+    delete result.patient;
+    result.notes = null;
+  }
+  return result;
 }
 
 export function toVisitNote(n: VisitNote): VisitNoteDto {

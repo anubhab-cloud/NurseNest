@@ -51,6 +51,7 @@ export interface PatientProfileDto {
 }
 
 export interface NurseProfileDto {
+  isVerified?: boolean;
   userId: string;
   fullName: string;
   certificationNumber: string;

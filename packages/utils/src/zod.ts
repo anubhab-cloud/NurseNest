@@ -15,6 +15,9 @@ export const paginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
-export const emailSchema = z.string().email();
-export const passwordSchema = z.string().min(8).max(128);
+export const emailSchema = z.string().trim().email().max(254).transform(value => value.toLowerCase());
+export const passwordSchema = z.string().min(8).max(72).refine(
+  value => new TextEncoder().encode(value).byteLength <= 72,
+  "Password must be no more than 72 UTF-8 bytes.",
+);
 export const cuidSchema = z.string().min(1);

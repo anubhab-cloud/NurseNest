@@ -1,176 +1,49 @@
-import { Redis } from "ioredis";
+import { Redis, type RedisOptions } from "ioredis";
 import { env } from "../config/env.js";
-import { EventEmitter } from "events";
-import net from "net";
+import { prisma } from "@nursenest/db";
+import { createHash } from "node:crypto";
 
-const globalBus = new EventEmitter();
-
-export class MockRedis extends EventEmitter {
-  private store = new Map<string, string>();
-
-  constructor() {
-    super();
-    // Forward pub/sub messages from the shared bus to this subscriber instance
-    const onPMessage = (pattern: string, channel: string, message: string) => {
-      this.emit("pmessage", pattern, channel, message);
-    };
-    const onMessage = (channel: string, message: string) => {
-      this.emit("message", channel, message);
-    };
-
-    globalBus.on("pmessage", onPMessage);
-    globalBus.on("message", onMessage);
-
-    // Clean up event listeners on disconnect/quit to avoid memory leaks
-    this.once("end", () => {
-      globalBus.off("pmessage", onPMessage);
-      globalBus.off("message", onMessage);
+// Sessions use durable PostgreSQL, not a process-local Redis mock.
+// Redis is optional and used only for Socket.IO cross-instance delivery.
+export function createRedisClient(options: RedisOptions = {}): Redis {
+  if (!env.redisUrl) throw new Error("REDIS_URL is not configured.");
+  return new Redis(env.redisUrl, { maxRetriesPerRequest: 2, connectTimeout: 5000, ...options });
+}
+const digest = (key: string) => createHash("sha256").update(key).digest("hex");
+export const tokenStore = {
+  async set(key: string, value: string, ttl: number): Promise<void> {
+    await prisma.sessionToken.upsert({
+      where: { key: digest(key) },
+      create: { key: digest(key), value, expiresAt: new Date(Date.now() + ttl * 1000) },
+      update: { value, expiresAt: new Date(Date.now() + ttl * 1000) },
     });
-
-    setTimeout(() => {
-      this.emit("connect");
-      this.emit("ready");
-    }, 0);
-  }
-
-  async set(key: string, value: string, ...args: any[]): Promise<"OK"> {
-    this.store.set(key, value);
-    return "OK";
-  }
-
+  },
   async get(key: string): Promise<string | null> {
-    return this.store.get(key) ?? null;
-  }
-
-  async del(...keys: string[]): Promise<number> {
-    let deleted = 0;
-    for (const key of keys) {
-      if (this.store.delete(key)) {
-        deleted++;
-      }
-    }
-    return deleted;
-  }
-
-  async keys(pattern: string): Promise<string[]> {
-    const regexStr = "^" + pattern.replace(/\*/g, ".*") + "$";
-    const regex = new RegExp(regexStr);
-    const results: string[] = [];
-    for (const key of this.store.keys()) {
-      if (regex.test(key)) {
-        results.push(key);
-      }
-    }
-    return results;
-  }
-
-  duplicate(): MockRedis {
-    const dup = new MockRedis();
-    dup.store = this.store; // share the key-value store
-    return dup;
-  }
-
-  async publish(channel: string, message: string): Promise<number> {
-    globalBus.emit("message", channel, message);
-    globalBus.emit("pmessage", "", channel, message);
-    return 1;
-  }
-
-  async psubscribe(...patterns: string[]): Promise<string[]> {
-    return patterns;
-  }
-
-  async subscribe(...channels: string[]): Promise<string[]> {
-    return channels;
-  }
-
-  async quit(): Promise<"OK"> {
-    this.emit("end");
-    return "OK";
-  }
-
-  async disconnect(): Promise<void> {
-    this.emit("end");
-  }
-}
-
-let redis: Redis | null = null;
-let useMock = false;
-
-export function setUseMockRedis(val: boolean): void {
-  useMock = val;
-}
-
-export function isRedisMock(): boolean {
-  return useMock;
-}
-
-export function createRedisClient(options?: any): Redis {
-  if (useMock) {
-    return new MockRedis() as unknown as Redis;
-  }
-  return new Redis(env.redisUrl, { maxRetriesPerRequest: 3, ...options });
-}
-
-export function getRedis(): Redis {
-  if (!redis) {
-    redis = createRedisClient();
-  }
-  return redis;
-}
-
-export function checkRedisConnection(urlStr: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    try {
-      const url = new URL(urlStr);
-      const port = parseInt(url.port || "6379");
-      const host = url.hostname || "localhost";
-      const socket = net.createConnection({ port, host, timeout: 500 });
-      socket.on("connect", () => {
-        socket.destroy();
-        resolve(true);
-      });
-      socket.on("error", () => {
-        socket.destroy();
-        resolve(false);
-      });
-      socket.on("timeout", () => {
-        socket.destroy();
-        resolve(false);
-      });
-    } catch {
-      resolve(false);
-    }
-  });
-}
-
+    const token = await prisma.sessionToken.findUnique({ where: { key: digest(key) } });
+    return token && token.expiresAt.getTime() > Date.now() ? token.value : null;
+  },
+  async consume(key: string): Promise<string | null> {
+    // deleteMany provides atomic one-time consumption, including concurrent reset requests.
+    const token = await prisma.sessionToken.findUnique({ where: { key: digest(key) } });
+    if (!token || token.expiresAt.getTime() <= Date.now()) return null;
+    const consumed = await prisma.sessionToken.deleteMany({ where: { key: digest(key), expiresAt: { gt: new Date() } } });
+    return consumed.count === 1 ? token.value : null;
+  },
+  async delete(key: string): Promise<void> {
+    await prisma.sessionToken.deleteMany({ where: { key: digest(key) } });
+  },
+};
 export const REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60;
-
-export function refreshKey(userId: string, tokenId: string): string {
-  return `refresh:${userId}:${tokenId}`;
-}
-
+export const refreshKey = (userId: string, tokenId: string) => `refresh:${userId}:${tokenId}`;
 export async function storeRefreshToken(userId: string, tokenId: string): Promise<void> {
-  const client = getRedis();
-  await client.set(refreshKey(userId, tokenId), "1", "EX", REFRESH_TTL_SECONDS);
+  await tokenStore.set(refreshKey(userId, tokenId), userId, REFRESH_TTL_SECONDS);
 }
-
 export async function revokeRefreshToken(userId: string, tokenId: string): Promise<void> {
-  const client = getRedis();
-  await client.del(refreshKey(userId, tokenId));
+  await tokenStore.delete(refreshKey(userId, tokenId));
 }
-
 export async function isRefreshTokenValid(userId: string, tokenId: string): Promise<boolean> {
-  const client = getRedis();
-  const value = await client.get(refreshKey(userId, tokenId));
-  return value === "1";
+  return (await tokenStore.get(refreshKey(userId, tokenId))) === userId;
 }
-
 export async function revokeAllRefreshTokens(userId: string): Promise<void> {
-  const client = getRedis();
-  const keys = await client.keys(`refresh:${userId}:*`);
-  if (keys.length > 0) {
-    await client.del(...keys);
-  }
+  await prisma.sessionToken.deleteMany({ where: { value: userId } });
 }
-

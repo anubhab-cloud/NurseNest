@@ -48,8 +48,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted p-4">
-      <Card className="w-full max-w-md">
+    <div className="flex w-full items-center justify-center p-4">
+      <Card className="w-full max-w-md border-border/70 bg-card/90 shadow-[0_30px_60px_-30px_hsl(var(--primary)/0.35)] backdrop-blur">
         <CardHeader>
           <CardTitle>Create your account</CardTitle>
         </CardHeader>

@@ -5,11 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "build": "pnpm --filter @nursenest/db generate && esbuild src/index.ts --bundle --platform=node --format=cjs --packages=external --alias:@nursenest/db=../../packages/db/src/index.ts --alias:@nursenest/types=../../packages/types/src/index.ts --alias:@nursenest/utils=../../packages/utils/src/index.ts --outfile=dist/index.cjs",
+    "start": "node --enable-source-maps dist/index.cjs",
+    "typecheck": "tsc --noEmit",
+    "test:smoke": "tsx scripts/smoke.ts",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@prisma/client": "^6.1.0",
+    "@aws-sdk/client-s3": "^3.709.0",
+    "@aws-sdk/s3-request-presigner": "^3.709.0",
+    "razorpay": "^2.9.5",
     "@fastify/cookie": "^11.0.1",
     "@fastify/cors": "^10.0.1",
     "@fastify/helmet": "^13.0.0",
@@ -19,7 +25,7 @@
     "@nursenest/utils": "workspace:*",
     "@sentry/node": "^8.42.0",
     "@socket.io/redis-adapter": "^8.3.0",
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "fastify": "^5.2.0",
     "ioredis": "^5.4.2",
     "jsonwebtoken": "^9.0.2",
@@ -29,6 +35,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "esbuild": "0.28.2",
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.2",

@@ -17,21 +17,22 @@ import { filesRoutes } from "./routes/files.routes.js";
 import { servicesRoutes } from "./routes/services.routes.js";
 import { nurseDashboardRoutes } from "./routes/nurse-dashboard.routes.js";
 import { registerSocket } from "./plugins/socket.js";
-import { checkRedisConnection, setUseMockRedis } from "./lib/redis.js";
+import { prisma } from "@nursenest/db";
+import { chatRoutes } from "./routes/chat.routes.js";
+import { contactRoutes } from "./routes/contact.routes.js";
+import { webhooksRoutes } from "./routes/webhooks.routes.js";
+import { ForbiddenError } from "@nursenest/utils";
 
 export async function buildApp() {
-  // Pre-check if a real Redis server is running locally
-  const isRedisAlive = await checkRedisConnection(env.redisUrl);
-  if (!isRedisAlive) {
-    console.warn(`[Redis] ⚠️ Connection to ${env.redisUrl} failed. Enabling in-memory Redis mock for local development.`);
-    setUseMockRedis(true);
-  }
-
   if (env.sentryDsn) {
     Sentry.init({ dsn: env.sentryDsn, environment: env.nodeEnv });
   }
 
-  const app = Fastify({ logger: env.nodeEnv === "development" });
+  const app = Fastify({
+    logger: { level: env.isProduction ? "info" : "debug", redact: ["req.headers.authorization", "req.headers.cookie", "res.headers.set-cookie"] },
+    bodyLimit: 64 * 1024,
+    trustProxy: "loopback",
+  });
 
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(cors, {
@@ -39,6 +40,12 @@ export async function buildApp() {
     credentials: true,
   });
   await app.register(cookie);
+  app.addHook("onRequest", async request => {
+    if (["GET", "HEAD", "OPTIONS"].includes(request.method)) return;
+    const origin = request.headers.origin;
+    if (origin && env.webOrigin && origin !== env.webOrigin) throw new ForbiddenError("Origin not allowed");
+    if (request.headers["sec-fetch-site"] === "cross-site") throw new ForbiddenError("Cross-site request rejected");
+  });
   await app.register(rateLimit, {
     max: 300,
     timeWindow: "1 minute",
@@ -48,6 +55,10 @@ export async function buildApp() {
   app.setErrorHandler(errorHandler);
 
   app.get("/health", async () => ({ ok: true }));
+  app.get("/api/healthz", async (_request, reply) => {
+    await prisma.$queryRaw`SELECT 1`;
+    return reply.send({ status: "ok" });
+  });
 
   await app.register(
     async (api) => {
@@ -61,11 +72,20 @@ export async function buildApp() {
       await api.register(filesRoutes, { prefix: "/files" });
       await api.register(servicesRoutes, { prefix: "/services" });
       await api.register(nurseDashboardRoutes, { prefix: "/nurse" });
+      await api.register(chatRoutes, { prefix: "/chat" });
+      await api.register(contactRoutes, { prefix: "/contact" });
+      await api.register(webhooksRoutes, { prefix: "/webhooks" });
     },
     { prefix: "/api/v1" },
   );
 
   await registerSocket(app);
+  const cleanup = setInterval(() => {
+    void prisma.sessionToken.deleteMany({ where: { expiresAt: { lt: new Date() } } })
+      .catch(err => app.log.error({ err }, "Session expiry cleanup failed"));
+  }, 60 * 60 * 1000);
+  cleanup.unref();
+  app.addHook("onClose", async () => { clearInterval(cleanup); await prisma.$disconnect(); });
 
   return app;
 }

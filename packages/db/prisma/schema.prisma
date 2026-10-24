@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -71,6 +71,7 @@ model NurseProfile {
   rating              Float    @default(0)
   totalVisits         Int      @default(0)
   isAvailable         Boolean  @default(true)
+  isVerified          Boolean  @default(false)
   currentLat          Float?
   currentLng          Float?
 
@@ -110,6 +111,7 @@ model Booking {
   visitNotes VisitNote?
   review     Review?
   invoice    Invoice?
+  messages   ChatMessage[]
 
   @@index([patientId])
   @@index([nurseId])
@@ -180,7 +182,35 @@ model Invoice {
   booking         Booking       @relation(fields: [bookingId], references: [id])
   amount          Int
   status          InvoiceStatus @default(PENDING)
-  razorpayOrderId String?
+  razorpayOrderId String?       @unique
+  razorpayPaymentId String?      @unique
   paidAt          DateTime?
   createdAt       DateTime      @default(now())
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  senderId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([bookingId, createdAt])
+}
+
+model SessionToken {
+  key       String   @id
+  value     String
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
 }

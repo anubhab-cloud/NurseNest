@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,20 +30,12 @@ export default function LoginPage() {
     const password = String(form.get("password"));
 
     try {
-      const res = await fetch("/api/v1/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
-      });
-      const json = (await res.json()) as ApiResponse<LoginResponseDto>;
-      if (!json.success) {
-        setError(json.error);
-        return;
-      }
-
-      await signIn("credentials", { email, password, redirect: false });
-      router.push(roleRedirect[json.data.user.role]);
+      const result = await signIn("credentials", { email, password, redirect: false });
+      if (result?.error) throw new Error("Invalid email or password.");
+      const session = await getSession();
+      if (!session?.user?.role) throw new Error("Could not start your session.");
+      router.push(roleRedirect[session.user.role]);
+      router.refresh();
     } catch {
       setError("Login failed. Please try again.");
     } finally {
@@ -52,8 +44,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted p-4">
-      <Card className="w-full max-w-md">
+    <div className="flex w-full items-center justify-center p-4">
+      <Card className="w-full max-w-md border-border/70 bg-card/90 shadow-[0_30px_60px_-30px_hsl(var(--primary)/0.35)] backdrop-blur">
         <CardHeader>
           <CardTitle>Sign in to NurseNest</CardTitle>
         </CardHeader>

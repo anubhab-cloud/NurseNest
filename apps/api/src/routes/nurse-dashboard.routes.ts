@@ -7,16 +7,16 @@ import { visitNoteRepository } from "../repositories/visit-note.repository.js";
 import { patientRepository } from "../repositories/patient.repository.js";
 import { invoiceRepository } from "../repositories/invoice.repository.js";
 import { nurseRepository } from "../repositories/nurse.repository.js";
-import { toBooking, toVital, toVisitNote, toPatientProfile, toInvoice, toNurseProfile } from "../lib/mappers.js";
-import { parseOrThrow, ForbiddenError, NotFoundError } from "@nursenest/utils";
+import { toNurseBooking, toVital, toVisitNote, toPatientProfile, toInvoice, toNurseProfile } from "../lib/mappers.js";
+import { parseOrThrow, ForbiddenError, NotFoundError, ValidationError } from "@nursenest/utils";
 import { z } from "zod";
 import { Role, BookingStatus } from "@nursenest/db";
 
 const visitNoteSchema = z.object({
-  observations: z.string().min(1),
-  medications: z.string().optional(),
-  nextVisitDate: z.string().optional(),
-  attachmentUrls: z.array(z.string()).optional(),
+  observations: z.string().min(1).max(10000),
+  medications: z.string().max(4000).optional(),
+  nextVisitDate: z.string().datetime({ offset: true }).or(z.string().date()).optional(),
+  attachmentUrls: z.array(z.string().url()).max(10).optional(),
 });
 
 export async function nurseDashboardRoutes(app: FastifyInstance): Promise<void> {
@@ -31,7 +31,7 @@ export async function nurseDashboardRoutes(app: FastifyInstance): Promise<void> 
 
   app.get("/me/bookings", async (request, reply) => {
     const bookings = await bookingRepository.findByNurse(request.user!.sub);
-    return reply.send(apiSuccess(bookings.map(toBooking)));
+    return reply.send(apiSuccess(bookings.map(toNurseBooking)));
   });
 
   app.get("/me/patients", async (request, reply) => {
@@ -72,6 +72,7 @@ export async function nurseDashboardRoutes(app: FastifyInstance): Promise<void> 
     if (!booking || booking.nurseId !== request.user!.sub) {
       throw new ForbiddenError();
     }
+    if (!["IN_PROGRESS", "COMPLETED"].includes(booking.status)) throw new ValidationError("Start the visit before recording completion notes.");
     const note = await visitNoteRepository.upsert({
       bookingId,
       nurseId: request.user!.sub,
@@ -81,7 +82,7 @@ export async function nurseDashboardRoutes(app: FastifyInstance): Promise<void> 
       attachmentUrls: data.attachmentUrls,
     });
     if (booking.status !== BookingStatus.COMPLETED) {
-      await bookingRepository.updateStatus(bookingId, BookingStatus.COMPLETED);
+      await bookingRepository.updateStatus(bookingId, BookingStatus.COMPLETED, booking.status);
     }
     return reply.send(apiSuccess(toVisitNote(note)));
   });

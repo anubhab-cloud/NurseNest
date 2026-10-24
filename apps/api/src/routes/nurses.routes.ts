@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { apiSuccess } from "@nursenest/types";
-import { parseOrThrow, NotFoundError } from "@nursenest/utils";
+import { parseOrThrow, NotFoundError, ForbiddenError } from "@nursenest/utils";
 import { authenticate, requireRoles } from "../middleware/auth.js";
 import { nurseRepository } from "../repositories/nurse.repository.js";
 import { reviewRepository } from "../repositories/review.repository.js";
@@ -18,20 +18,23 @@ export async function nursesRoutes(app: FastifyInstance): Promise<void> {
       serviceId: query.serviceId,
       date: query.date ? new Date(query.date) : undefined,
     });
-    return reply.send(apiSuccess(nurses.map(toNurseProfile)));
+    return reply.send(apiSuccess(nurses.map(n => ({ ...toNurseProfile(n), currentLat: null, currentLng: null, certificationNumber: "" }))));
   });
 
   app.get("/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
     const nurse = await nurseRepository.findById(id);
-    if (!nurse) throw new NotFoundError("Nurse not found");
-    return reply.send(apiSuccess(toNurseProfile(nurse)));
+    if (!nurse || !nurse.isVerified || !nurse.user.isActive) throw new NotFoundError("Nurse not found");
+    return reply.send(apiSuccess({ ...toNurseProfile(nurse), currentLat: null, currentLng: null, certificationNumber: "" }));
   });
 
   app.get("/:id/reviews", async (request, reply) => {
     const { id } = request.params as { id: string };
     const reviews = await reviewRepository.findByNurse(id);
-    return reply.send(apiSuccess(reviews.map(toReview)));
+    return reply.send(apiSuccess(reviews.map(review => ({
+      id: review.id, nurseId: review.nurseId, rating: review.rating,
+      comment: review.comment, createdAt: review.createdAt.toISOString(),
+    }))));
   });
 
   app.register(async (protectedApp) => {
@@ -40,13 +43,15 @@ export async function nursesRoutes(app: FastifyInstance): Promise<void> {
 
     protectedApp.patch("/me/availability", async (request, reply) => {
       const { isAvailable } = parseOrThrow(z.object({ isAvailable: z.boolean() }), request.body);
+      const nurse = await nurseRepository.findByUserId(request.user!.sub);
+      if (isAvailable && !nurse?.isVerified) throw new ForbiddenError("Your credentials must be reviewed by an administrator first.");
       const updated = await nurseRepository.update(request.user!.sub, { isAvailable });
       return reply.send(apiSuccess(toNurseProfile(updated)));
     });
 
     protectedApp.patch("/me/location", async (request, reply) => {
       const { lat, lng } = parseOrThrow(
-        z.object({ lat: z.number(), lng: z.number() }),
+        z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }),
         request.body,
       );
       const updated = await nurseRepository.update(request.user!.sub, {

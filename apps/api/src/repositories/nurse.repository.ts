@@ -32,7 +32,7 @@ export const nurseRepository = {
     date?: Date;
   }) {
     return prisma.nurseProfile.findMany({
-      where: { isAvailable: true, user: { isActive: true } },
+      where: { isAvailable: true, isVerified: true, user: { isActive: true } },
       include: { user: true },
     });
   },
@@ -53,7 +53,7 @@ export const nurseRepository = {
 
   countActive(): Promise<number> {
     return prisma.nurseProfile.count({
-      where: { isAvailable: true, user: { isActive: true } },
+      where: { isAvailable: true, isVerified: true, user: { isActive: true } },
     });
   },
 };

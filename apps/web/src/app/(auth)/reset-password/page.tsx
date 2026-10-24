@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -47,8 +47,8 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted p-4">
-      <Card className="w-full max-w-md">
+    <div className="flex w-full items-center justify-center p-4">
+      <Card className="w-full max-w-md border-border/70 bg-card/90 shadow-[0_30px_60px_-30px_hsl(var(--primary)/0.35)] backdrop-blur">
         <CardHeader>
           <CardTitle>Set new password</CardTitle>
         </CardHeader>
