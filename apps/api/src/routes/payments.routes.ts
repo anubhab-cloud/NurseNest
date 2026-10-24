@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { apiSuccess } from "@nursenest/types";
-import { parseOrThrow, NotFoundError, ForbiddenError, ValidationError } from "@nursenest/utils";
+import { parseOrThrow, NotFoundError, ForbiddenError, ValidationError, AppError, ConflictError } from "@nursenest/utils";
 import { createRazorpayClient, createRazorpayOrder, verifyRazorpaySignature } from "@nursenest/utils";
 import { authenticate, requireRoles } from "../middleware/auth.js";
 import { bookingRepository } from "../repositories/booking.repository.js";
@@ -24,24 +24,21 @@ export async function paymentsRoutes(app: FastifyInstance): Promise<void> {
 
     const invoice = await invoiceRepository.findByBooking(bookingId);
     if (!invoice) throw new NotFoundError("Invoice not found");
+    if (booking.status === "CANCELLED") throw new ValidationError("Cannot pay for a cancelled booking.");
+    if (invoice.status === "PAID") throw new ConflictError("This invoice is already paid.");
 
     if (!env.razorpayKeyId || !env.razorpayKeySecret) {
-      const mockOrderId = `order_mock_${bookingId}`;
-      await invoiceRepository.updatePayment(bookingId, { razorpayOrderId: mockOrderId });
-      return reply.send(
-        apiSuccess({
-          orderId: mockOrderId,
-          amount: invoice.amount,
-          currency: "INR",
-          keyId: env.razorpayKeyId || "mock_key",
-        }),
-      );
+      throw new AppError("Online payments are not configured. Your booking is saved; contact the care team to arrange payment.", 503);
     }
 
     const client = createRazorpayClient({
       keyId: env.razorpayKeyId,
       keySecret: env.razorpayKeySecret,
     });
+    if (invoice.razorpayOrderId) {
+      const existing = await client.orders.fetch(invoice.razorpayOrderId);
+      return reply.send(apiSuccess({ orderId: existing.id, amount: Number(existing.amount), currency: existing.currency, keyId: env.razorpayKeyId }));
+    }
     const order = await createRazorpayOrder(client, invoice.amount, bookingId);
     await invoiceRepository.updatePayment(bookingId, { razorpayOrderId: order.id });
 
@@ -72,21 +69,29 @@ export async function paymentsRoutes(app: FastifyInstance): Promise<void> {
       throw new ForbiddenError();
     }
 
-    if (env.razorpayKeySecret) {
-      const valid = verifyRazorpaySignature(
+    if (!env.razorpayKeyId || !env.razorpayKeySecret) throw new AppError("Online payments are not configured.", 503);
+    const current = await invoiceRepository.findByBooking(body.bookingId);
+    if (!current || current.razorpayOrderId !== body.razorpay_order_id) throw new ValidationError("Payment order does not match this invoice.");
+    if (current.status === "PAID") {
+      if (current.razorpayPaymentId === body.razorpay_payment_id) return reply.send(apiSuccess(toInvoice(current)));
+      throw new ConflictError("Invoice already paid.");
+    }
+    if (booking.status === "CANCELLED") throw new ValidationError("Booking cancelled. Please contact support about this payment.");
+    const valid = verifyRazorpaySignature(
         body.razorpay_order_id,
         body.razorpay_payment_id,
         body.razorpay_signature,
         env.razorpayKeySecret,
       );
-      if (!valid) throw new ValidationError("Invalid payment signature");
+    if (!valid) throw new ValidationError("Invalid payment signature");
+    const client = createRazorpayClient({ keyId: env.razorpayKeyId, keySecret: env.razorpayKeySecret });
+    const payment = await client.payments.fetch(body.razorpay_payment_id);
+    if (payment.order_id !== current.razorpayOrderId || Number(payment.amount) !== current.amount ||
+      payment.currency !== "INR" || payment.status !== "captured") {
+      throw new ValidationError("Payment has not been captured for this invoice.");
     }
 
-    const invoice = await invoiceRepository.updatePayment(body.bookingId, {
-      status: "PAID",
-      paidAt: new Date(),
-      razorpayOrderId: body.razorpay_order_id,
-    });
+    const invoice = await invoiceRepository.capture(body.bookingId, body.razorpay_order_id, body.razorpay_payment_id);
 
     return reply.send(apiSuccess(toInvoice(invoice)));
   });

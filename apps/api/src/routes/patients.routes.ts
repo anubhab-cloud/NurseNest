@@ -7,18 +7,20 @@ import { patientRepository } from "../repositories/patient.repository.js";
 import { vitalRepository } from "../repositories/vital.repository.js";
 import { bookingRepository } from "../repositories/booking.repository.js";
 import { notificationRepository } from "../repositories/notification.repository.js";
-import { toPatientProfile, toVital, toBooking, toNotification } from "../lib/mappers.js";
+import { visitNoteRepository } from "../repositories/visit-note.repository.js";
+import { invoiceRepository } from "../repositories/invoice.repository.js";
+import { toPatientProfile, toVital, toBooking, toNotification, toVisitNote, toInvoice } from "../lib/mappers.js";
 import { Role } from "@nursenest/db";
 
 const updatePatientSchema = z.object({
   fullName: z.string().min(2).optional(),
-  dateOfBirth: z.string().optional(),
+  dateOfBirth: z.string().datetime({ offset: true }).or(z.string().date()).optional(),
   bloodGroup: z.string().optional(),
   allergies: z.array(z.string()).optional(),
   emergencyContact: z.string().optional(),
   address: z.string().optional(),
-  lat: z.number().optional(),
-  lng: z.number().optional(),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
 });
 
 export async function patientsRoutes(app: FastifyInstance): Promise<void> {
@@ -45,8 +47,8 @@ export async function patientsRoutes(app: FastifyInstance): Promise<void> {
   app.get("/me/vitals", async (request, reply) => {
     const query = parseOrThrow(
       paginationSchema.extend({
-        from: z.string().optional(),
-        to: z.string().optional(),
+        from: z.string().datetime({ offset: true }).optional(),
+        to: z.string().datetime({ offset: true }).optional(),
       }),
       request.query,
     );
@@ -72,9 +74,17 @@ export async function patientsRoutes(app: FastifyInstance): Promise<void> {
     const bookings = await bookingRepository.findByPatient(request.user!.sub);
     return reply.send(apiSuccess(bookings.map(toBooking)));
   });
+  app.get("/me/notes", async request => apiSuccess((await visitNoteRepository.findByPatient(request.user!.sub)).map(toVisitNote)));
+  app.get("/me/invoices", async request => apiSuccess((await invoiceRepository.findByPatient(request.user!.sub)).map(toInvoice)));
 
   app.get("/me/notifications", async (request, reply) => {
     const notifications = await notificationRepository.findByUser(request.user!.sub);
     return reply.send(apiSuccess(notifications.map(toNotification)));
+  });
+  app.patch("/me/notifications/:id/read", async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const items = await notificationRepository.findByUser(request.user!.sub);
+    if (!items.some(item => item.id === id)) throw new NotFoundError("Notification not found");
+    return reply.send(apiSuccess(toNotification(await notificationRepository.markRead(id, request.user!.sub))));
   });
 }

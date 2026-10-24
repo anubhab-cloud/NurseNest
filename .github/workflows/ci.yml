@@ -1,0 +1,43 @@
+name: Production checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: nursenest
+          POSTGRES_PASSWORD: ci-only-not-a-live-credential
+          POSTGRES_DB: nursenest_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U nursenest -d nursenest_ci"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://nursenest:ci-only-not-a-live-credential@localhost:5432/nursenest_ci
+      SESSION_SECRET: isolated-ci-session-secret-never-use-in-production
+      WEB_ORIGIN: http://localhost:3000
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm --filter @nursenest/db migrate:deploy
+      - run: pnpm db:seed
+      - run: pnpm --filter @nursenest/api typecheck
+      - run: pnpm --filter @nursenest/api test:smoke
+      - run: pnpm --filter @nursenest/api build
+      - run: pnpm --filter @nursenest/web build

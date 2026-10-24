@@ -3,6 +3,8 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 const links = [
   { href: "/dashboard/admin", label: "Overview" },
   { href: "/dashboard/admin/users", label: "Users" },
+  { href: "/dashboard/admin/nurses", label: "Nurse review" },
+  { href: "/dashboard/admin/inbox", label: "Inbox" },
   { href: "/dashboard/admin/bookings", label: "Bookings" },
   { href: "/dashboard/admin/analytics", label: "Analytics" },
 ];

@@ -4,6 +4,7 @@ import { env } from "../config/env.js";
 import type { Role } from "@nursenest/types";
 
 export interface AccessTokenPayload {
+  exp?: number;
   sub: string;
   email: string;
   role: Role;
@@ -32,7 +33,7 @@ export function signRefreshToken(userId: string): { token: string; tokenId: stri
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload {
-  const decoded = jwt.verify(token, env.jwtAccessSecret) as AccessTokenPayload;
+  const decoded = jwt.verify(token, env.jwtAccessSecret, { algorithms: ["HS256"] }) as AccessTokenPayload;
   if (decoded.type !== "access") {
     throw new Error("Invalid token type");
   }
@@ -40,7 +41,7 @@ export function verifyAccessToken(token: string): AccessTokenPayload {
 }
 
 export function verifyRefreshToken(token: string): RefreshTokenPayload {
-  const decoded = jwt.verify(token, env.jwtRefreshSecret) as RefreshTokenPayload;
+  const decoded = jwt.verify(token, env.jwtRefreshSecret, { algorithms: ["HS256"] }) as RefreshTokenPayload;
   if (decoded.type !== "refresh") {
     throw new Error("Invalid token type");
   }

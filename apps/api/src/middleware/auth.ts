@@ -27,7 +27,7 @@ export async function authenticate(request: FastifyRequest, _reply: FastifyReply
     if (!user || !user.isActive) {
       throw new UnauthorizedError("Account inactive or not found");
     }
-    request.user = { ...payload, isActive: user.isActive };
+    request.user = { ...payload, role: user.role, email: user.email, isActive: user.isActive };
   } catch {
     throw new UnauthorizedError("Invalid or expired token");
   }

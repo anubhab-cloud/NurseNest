@@ -1,20 +1,27 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthSessionProvider } from "@/providers/session-provider";
 
-const inter = Inter({ subsets: ["latin"] });
+const display = Fraunces({ subsets: ["latin"], variable: "--font-display", axes: ["opsz", "SOFT"] });
+const body = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-body" });
 
 export const metadata: Metadata = {
-  title: "NurseNest — Professional Home Nursing Care",
-  description: "Book certified nurses for elder care, wound dressing, IV therapy and more at home.",
+  title: "NurseNest — Nursing care, arranged at home",
+  description:
+    "Arrange home nursing visits across India: elder care, wound dressing, injections and recovery support, with visit notes and vitals in one place.",
 };
+
+const themeScript = `try{if(localStorage.getItem("nn-theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className={`${display.variable} ${body.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body>
         <AuthSessionProvider>
           <QueryProvider>{children}</QueryProvider>
         </AuthSessionProvider>

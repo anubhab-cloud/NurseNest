@@ -15,6 +15,12 @@ export const reviewRepository = {
     rating: number;
     comment?: string;
   }): Promise<Review> {
-    return prisma.review.create({ data });
+    return prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${data.nurseId}))`;
+      const review = await tx.review.create({ data });
+      const ratings = await tx.review.aggregate({ where: { nurseId: data.nurseId }, _avg: { rating: true } });
+      await tx.nurseProfile.update({ where: { userId: data.nurseId }, data: { rating: ratings._avg.rating || 0 } });
+      return review;
+    });
   },
 };

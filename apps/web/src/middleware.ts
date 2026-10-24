@@ -20,6 +20,9 @@ export default auth((req) => {
       path.startsWith("/api/v1/auth/forgot-password") ||
       path.startsWith("/api/v1/auth/reset-password") ||
       path === "/api/v1/services" ||
+      path === "/api/v1/services/" ||
+      (path === "/api/v1/contact" && req.method === "POST") ||
+      (path === "/api/v1/webhooks/razorpay" && req.method === "POST") ||
       path.startsWith("/api/v1/nurses/available") ||
       /^\/api\/v1\/nurses\/[^/]+$/.test(path) ||
       /^\/api\/v1\/nurses\/[^/]+\/reviews$/.test(path);
@@ -77,5 +80,6 @@ export default auth((req) => {
 });
 
 export const config = {
+  runtime: "nodejs",
   matcher: ["/dashboard/:path*", "/login", "/register", "/api/v1/:path*"],
 };

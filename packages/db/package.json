@@ -8,14 +8,17 @@
   "scripts": {
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "typecheck": "tsc --noEmit",
     "push": "prisma db push",
     "seed": "tsx prisma/seed.ts",
+    "promote-admin": "tsx scripts/promote-admin.ts",
     "studio": "prisma studio",
     "build": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0",
-    "bcrypt": "^5.1.1"
+    "bcrypt": "^6.0.0"
   },
   "devDependencies": {
     "prisma": "^6.1.0",

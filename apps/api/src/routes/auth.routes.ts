@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
-import { randomUUID } from "node:crypto";
+import { z } from "zod";
+import { randomUUID, createHash } from "node:crypto";
 import { apiSuccess, apiFailure } from "@nursenest/types";
-import { parseOrThrow, ConflictError, UnauthorizedError, NotFoundError } from "@nursenest/utils";
+import { parseOrThrow, ConflictError, UnauthorizedError, NotFoundError, AppError } from "@nursenest/utils";
 import {
   loginSchema,
   registerPatientSchema,
@@ -15,7 +16,7 @@ import { nurseRepository } from "../repositories/nurse.repository.js";
 import { passwordResetRepository } from "../repositories/password-reset.repository.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../lib/jwt.js";
-import { storeRefreshToken, revokeRefreshToken, isRefreshTokenValid } from "../lib/redis.js";
+import { storeRefreshToken, revokeRefreshToken, isRefreshTokenValid, revokeAllRefreshTokens } from "../lib/redis.js";
 import { setAuthCookies, clearAuthCookies, REFRESH_COOKIE } from "../lib/cookies.js";
 import { toAuthUser } from "../lib/mappers.js";
 import { sendPasswordResetEmail } from "../services/email.service.js";
@@ -24,7 +25,7 @@ import { Role } from "@nursenest/db";
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post("/register", async (request, reply) => {
-    const body = request.body as Record<string, unknown>;
+    const body = parseOrThrow(z.object({ role: z.enum(["PATIENT", "NURSE"]) }).passthrough(), request.body);
     const role = body["role"] as string;
 
     if (role === Role.NURSE) {
@@ -33,18 +34,19 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       if (existing) throw new ConflictError("Email already registered");
 
       const passwordHash = await hashPassword(data.password);
-      const user = await userRepository.create({
+      const user = await userRepository.register({
         email: data.email,
         passwordHash,
         role: Role.NURSE,
         phone: data.phone,
-      });
-      await nurseRepository.create({
-        userId: user.id,
-        fullName: data.fullName,
-        certificationNumber: data.certificationNumber,
-        specializations: data.specializations,
-        yearsExp: data.yearsExp,
+        nurseProfile: { create: {
+          fullName: data.fullName,
+          certificationNumber: data.certificationNumber,
+          specializations: data.specializations?.join(",") || "",
+          yearsExp: data.yearsExp,
+          isAvailable: false,
+          isVerified: false,
+        } },
       });
       return reply.status(201).send(apiSuccess({ user: toAuthUser(user) }));
     }
@@ -54,27 +56,29 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     if (existing) throw new ConflictError("Email already registered");
 
     const passwordHash = await hashPassword(data.password);
-    const user = await userRepository.create({
+    const user = await userRepository.register({
       email: data.email,
       passwordHash,
       role: Role.PATIENT,
       phone: data.phone,
-    });
-    await patientRepository.create({
-      userId: user.id,
-      fullName: data.fullName,
-      dateOfBirth: new Date(data.dateOfBirth),
-      bloodGroup: data.bloodGroup,
-      allergies: data.allergies,
-      emergencyContact: data.emergencyContact,
-      address: data.address,
-      lat: data.lat,
-      lng: data.lng,
+      patientProfile: { create: {
+        fullName: data.fullName,
+        dateOfBirth: new Date(data.dateOfBirth),
+        bloodGroup: data.bloodGroup,
+        allergies: data.allergies?.join(",") || "",
+        emergencyContact: data.emergencyContact,
+        address: data.address,
+        lat: data.lat,
+        lng: data.lng,
+      } },
     });
     return reply.status(201).send(apiSuccess({ user: toAuthUser(user) }));
   });
 
-  app.post("/login", { config: { rateLimit: { max: env.nodeEnv === "development" ? 1000 : 5, timeWindow: "15 minutes" } } }, async (request, reply) => {
+  app.post("/login", { config: { rateLimit: {
+    max: 10, timeWindow: "15 minutes", hook: "preHandler",
+    keyGenerator: request => createHash("sha256").update(String((request.body as Record<string, unknown> | null)?.["email"] || "").trim().toLowerCase()).digest("hex"),
+  } } }, async (request, reply) => {
     const data = parseOrThrow(loginSchema, request.body);
     const user = await userRepository.findByEmail(data.email);
     if (!user || !(await verifyPassword(data.password, user.passwordHash))) {
@@ -135,8 +139,9 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
-  app.post("/forgot-password", async (request, reply) => {
+  app.post("/forgot-password", { config: { rateLimit: { max: 5, timeWindow: "15 minutes" } } }, async (request, reply) => {
     const { email } = parseOrThrow(forgotPasswordSchema, request.body);
+    if (!env.resendApiKey || !env.emailFrom) throw new AppError("Password reset email is not configured. Please contact your care administrator.", 503);
     const user = await userRepository.findByEmail(email);
     if (user) {
       const token = randomUUID();
@@ -154,6 +159,9 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
     const passwordHash = await hashPassword(password);
     await userRepository.updatePassword(userId, passwordHash);
+    await revokeAllRefreshTokens(userId);
+    app.io.in(`user:${userId}`).disconnectSockets(true);
+    clearAuthCookies(reply);
     await passwordResetRepository.delete(token);
     return reply.send(apiSuccess({ message: "Password updated" }));
   });

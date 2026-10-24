@@ -5,10 +5,15 @@ async function main() {
   assertProductionSecrets();
   const app = await buildApp();
   await app.listen({ port: env.port, host: env.host });
-  console.log(`API listening on http://${env.host}:${env.port}`);
+  for (const signal of ["SIGTERM", "SIGINT"]) {
+    process.once(signal, async () => {
+      await app.close();
+      process.exit(0);
+    });
+  }
 }
 
 main().catch((err) => {
-  console.error(err);
+  process.stderr.write(`${err instanceof Error ? err.message : "API startup failed"}\n`);
   process.exit(1);
 });

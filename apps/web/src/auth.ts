@@ -20,9 +20,10 @@ declare module "next-auth" {
   }
 }
 
-const internalApi = process.env["INTERNAL_API_URL"] ?? "http://localhost:3001";
+const internalApi = process.env["INTERNAL_API_URL"] ?? "http://127.0.0.1:8080";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true,
   providers: [
     Credentials({
       credentials: {
@@ -55,6 +56,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
+  events: {
+    async signOut(message) {
+      if ("token" in message && message.token?.["refreshToken"]) {
+        await fetch(`${internalApi}/api/v1/auth/logout`, {
+          method: "POST",
+          headers: { Cookie: `nursenest_refresh=${message.token["refreshToken"]}` },
+        });
+      }
+    },
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -106,5 +117,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: "/login",
   },
-  secret: process.env["AUTH_SECRET"],
+  secret: process.env["AUTH_SECRET"] || process.env["SESSION_SECRET"],
 });

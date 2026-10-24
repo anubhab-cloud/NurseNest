@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import type { ClientToServerEvents, ServerToClientEvents } from "@nursenest/types";
 import { useSession } from "next-auth/react";
@@ -9,23 +9,23 @@ type AppSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 export function useSocket(): AppSocket | null {
   const { data: session } = useSession();
-  const socketRef = useRef<AppSocket | null>(null);
+  const [activeSocket, setActiveSocket] = useState<AppSocket | null>(null);
 
   useEffect(() => {
     if (!session?.accessToken) return;
 
-    const url = process.env["NEXT_PUBLIC_SOCKET_URL"] ?? "http://localhost:3001";
+    const url = process.env["NEXT_PUBLIC_SOCKET_URL"] ?? window.location.origin;
     const socket: AppSocket = io(url, {
       auth: { token: session.accessToken },
       withCredentials: true,
     });
-    socketRef.current = socket;
+    setActiveSocket(socket);
 
     return () => {
       socket.disconnect();
-      socketRef.current = null;
+      setActiveSocket(null);
     };
   }, [session?.accessToken]);
 
-  return socketRef.current;
+  return activeSocket;
 }

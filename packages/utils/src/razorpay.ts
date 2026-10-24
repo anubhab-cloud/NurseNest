@@ -38,5 +38,6 @@ export function verifyRazorpaySignature(
 ): boolean {
   const body = `${orderId}|${paymentId}`;
   const expected = crypto.createHmac("sha256", secret).update(body).digest("hex");
-  return expected === signature;
+  if (!/^[a-f0-9]{64}$/i.test(signature)) return false;
+  return crypto.timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(signature, "hex"));
 }

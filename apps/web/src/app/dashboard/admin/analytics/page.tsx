@@ -1,58 +1,46 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import type { BookingDto, PaginatedDto } from "@nursenest/types";
 import { apiFetch } from "@/lib/api";
-import type { AdminStatsDto, BookingDto, PaginatedDto } from "@nursenest/types";
+import { Panel, Skeleton, ErrorNote } from "@/components/common/panel";
+import { StatusPill } from "@/components/bookings/status";
 
 export default function AdminAnalyticsPage() {
-  const { data: stats } = useQuery({
-    queryKey: ["admin-stats"],
-    queryFn: () => apiFetch<AdminStatsDto>("/api/v1/admin/stats"),
-  });
-  const { data: bookings } = useQuery({
-    queryKey: ["admin-bookings-chart"],
-    queryFn: () => apiFetch<PaginatedDto<BookingDto>>("/api/v1/admin/bookings?limit=100"),
-  });
-
+  const q = useQuery({ queryKey: ["admin-bookings", "chart"], queryFn: () => apiFetch<PaginatedDto<BookingDto>>("/api/v1/admin/bookings?limit=100") });
+  if (q.isLoading) return <Skeleton className="h-96" />;
+  if (q.isError) return <ErrorNote message={q.error.message} onRetry={() => void q.refetch()} />;
+  const items = q.data?.items ?? [];
   const byService: Record<string, number> = {};
-  for (const b of bookings?.items ?? []) {
-    const name = b.service?.name ?? "Other";
-    byService[name] = (byService[name] ?? 0) + 1;
+  const byStatus: Record<string, number> = {};
+  for (const b of items) {
+    const n = b.service?.name ?? "Other";
+    byService[n] = (byService[n] ?? 0) + 1;
+    byStatus[b.status] = (byStatus[b.status] ?? 0) + 1;
   }
-  const chartData = Object.entries(byService).map(([name, count]) => ({ name, count }));
-
+  const chart = Object.entries(byService).map(([name, count]) => ({ name, count }));
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Platform KPIs</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-1">
-            <p>Bookings: {stats?.totalBookings ?? 0}</p>
-            <p>Revenue (paise): {stats?.totalRevenue ?? 0}</p>
-            <p>Active nurses: {stats?.activeNurses ?? 0}</p>
-          </CardContent>
-        </Card>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Bookings by Service</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" fill="#059669" />
+      <p className="text-xs text-muted-foreground">Based on the {items.length} most recent bookings{q.data && q.data.total > items.length ? ` of ${q.data.total}` : ""}.</p>
+      <Panel eyebrow="Demand" title="Bookings by service">
+        {chart.length === 0 ? <p className="py-10 text-center text-sm text-muted-foreground">No bookings to chart yet.</p> : (
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={chart}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+              <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12 }} />
+              <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+          </ResponsiveContainer>)}
+      </Panel>
+      <Panel eyebrow="Pipeline" title="By status">
+        <div className="flex flex-wrap gap-4">
+          {(["PENDING", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const).map((s) => (
+            <div key={s} className="rounded-2xl border p-4"><StatusPill status={s} /><p className="mt-2 font-display text-3xl">{byStatus[s] ?? 0}</p></div>))}
+        </div>
+      </Panel>
     </div>
   );
 }

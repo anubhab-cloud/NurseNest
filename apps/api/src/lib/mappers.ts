@@ -57,6 +57,7 @@ export function toNurseProfile(n: NurseProfile): NurseProfileDto {
     rating: n.rating,
     totalVisits: n.totalVisits,
     isAvailable: n.isAvailable,
+    isVerified: n.isVerified,
     currentLat: n.currentLat,
     currentLng: n.currentLng,
   };

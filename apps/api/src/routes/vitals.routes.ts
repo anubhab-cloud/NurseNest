@@ -51,7 +51,12 @@ export async function vitalsRoutes(app: FastifyInstance): Promise<void> {
       emitCriticalAlert(data.patientId, message, "vitals");
       const patient = await patientRepository.findByUserId(data.patientId);
       if (patient?.emergencyContact) {
-        await sendCriticalSms(patient.emergencyContact, message);
+        try {
+          const sent = await sendCriticalSms(patient.emergencyContact, message);
+          if (!sent) request.log.warn("SMS alerts not configured; critical reading saved and in-app alert emitted.");
+        } catch {
+          request.log.error("SMS provider failed; critical reading saved. An operator must follow up.");
+        }
       }
     }
 

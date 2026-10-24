@@ -4,6 +4,21 @@ export const invoiceRepository = {
   findByBooking(bookingId: string): Promise<Invoice | null> {
     return prisma.invoice.findUnique({ where: { bookingId } });
   },
+  findByOrder(razorpayOrderId: string) {
+    return prisma.invoice.findUnique({ where: { razorpayOrderId } });
+  },
+  async capture(bookingId: string, orderId: string, paymentId: string) {
+    return prisma.$transaction(async tx => {
+      await tx.invoice.updateMany({
+        where: { bookingId, razorpayOrderId: orderId, status: "PENDING" },
+        data: { status: "PAID", paidAt: new Date(), razorpayPaymentId: paymentId },
+      });
+      return tx.invoice.findUniqueOrThrow({ where: { bookingId } });
+    });
+  },
+  findByPatient(patientId: string) {
+    return prisma.invoice.findMany({ where: { booking: { patientId } }, orderBy: { createdAt: "desc" } });
+  },
 
   findByNurse(nurseId: string): Promise<Invoice[]> {
     return prisma.invoice.findMany({
@@ -19,7 +34,7 @@ export const invoiceRepository = {
 
   updatePayment(
     bookingId: string,
-    data: { razorpayOrderId?: string; status?: InvoiceStatus; paidAt?: Date },
+    data: { razorpayOrderId?: string; razorpayPaymentId?: string; status?: InvoiceStatus; paidAt?: Date },
   ): Promise<Invoice> {
     return prisma.invoice.update({ where: { bookingId }, data });
   },
