@@ -31,7 +31,10 @@ export async function nursesRoutes(app: FastifyInstance): Promise<void> {
   app.get("/:id/reviews", async (request, reply) => {
     const { id } = request.params as { id: string };
     const reviews = await reviewRepository.findByNurse(id);
-    return reply.send(apiSuccess(reviews.map(toReview)));
+    return reply.send(apiSuccess(reviews.map(review => ({
+      id: review.id, nurseId: review.nurseId, rating: review.rating,
+      comment: review.comment, createdAt: review.createdAt.toISOString(),
+    }))));
   });
 
   app.register(async (protectedApp) => {

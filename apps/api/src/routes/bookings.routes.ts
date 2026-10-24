@@ -15,7 +15,7 @@ import { nurseRepository } from "../repositories/nurse.repository.js";
 import { reviewRepository } from "../repositories/review.repository.js";
 import { toReview } from "../lib/mappers.js";
 import { invoiceRepository } from "../repositories/invoice.repository.js";
-import { toBooking } from "../lib/mappers.js";
+import { toBooking, toNurseBooking } from "../lib/mappers.js";
 import { emitBookingStatus, notifyUser } from "../services/notification.service.js";
 import { Role, BookingStatus } from "@nursenest/db";
 
@@ -73,7 +73,7 @@ export async function bookingsRoutes(app: FastifyInstance): Promise<void> {
     const booking = await bookingRepository.findById(id);
     if (!booking) throw new NotFoundError("Booking not found");
     await assertBookingAccess(request.user!, booking);
-    return reply.send(apiSuccess(toBooking(booking)));
+    return reply.send(apiSuccess(request.user!.role === Role.NURSE ? toNurseBooking(booking) : toBooking(booking)));
   });
 
   app.patch("/:id/status", { preHandler: [requireRoles(Role.NURSE, Role.ADMIN)] }, async (request, reply) => {
@@ -100,7 +100,7 @@ export async function bookingsRoutes(app: FastifyInstance): Promise<void> {
     const message = `Booking status updated to ${status}`;
     emitBookingStatus(id, status, message);
     await notifyUser(booking.patientId, "Booking Update", message, "booking");
-    return reply.send(apiSuccess(toBooking(updated)));
+    return reply.send(apiSuccess(request.user!.role === Role.NURSE ? toNurseBooking(updated) : toBooking(updated)));
   });
 
   app.delete("/:id", { preHandler: [requireRoles(Role.PATIENT)] }, async (request, reply) => {

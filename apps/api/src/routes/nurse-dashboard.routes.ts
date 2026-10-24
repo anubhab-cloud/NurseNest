@@ -7,7 +7,7 @@ import { visitNoteRepository } from "../repositories/visit-note.repository.js";
 import { patientRepository } from "../repositories/patient.repository.js";
 import { invoiceRepository } from "../repositories/invoice.repository.js";
 import { nurseRepository } from "../repositories/nurse.repository.js";
-import { toBooking, toVital, toVisitNote, toPatientProfile, toInvoice, toNurseProfile } from "../lib/mappers.js";
+import { toNurseBooking, toVital, toVisitNote, toPatientProfile, toInvoice, toNurseProfile } from "../lib/mappers.js";
 import { parseOrThrow, ForbiddenError, NotFoundError, ValidationError } from "@nursenest/utils";
 import { z } from "zod";
 import { Role, BookingStatus } from "@nursenest/db";
@@ -31,7 +31,7 @@ export async function nurseDashboardRoutes(app: FastifyInstance): Promise<void> 
 
   app.get("/me/bookings", async (request, reply) => {
     const bookings = await bookingRepository.findByNurse(request.user!.sub);
-    return reply.send(apiSuccess(bookings.map(toBooking)));
+    return reply.send(apiSuccess(bookings.map(toNurseBooking)));
   });
 
   app.get("/me/patients", async (request, reply) => {

@@ -39,6 +39,9 @@ try {
   await call("POST", "/bookings", p.accessToken, { ...input, scheduledAt: "invalid" }, 400);
   await call("POST", "/bookings", p.accessToken, { ...input, scheduledAt: "2020-01-01T00:00:00Z" }, 400);
   const booking = await call("POST", "/bookings", p.accessToken, input, 201);
+  const pending = await call("GET", `/bookings/${booking.id}`, n.accessToken);
+  assert.equal(pending.patient, undefined, "Pending visits must not expose patient health profiles");
+  assert.equal(pending.notes, null);
   assert.equal((await prisma.invoice.findUniqueOrThrow({ where: { bookingId: booking.id } })).amount, booking.totalAmount);
   await call("POST", "/bookings", p.accessToken, input, 409);
   await call("GET", `/chat/${booking.id}`, o.accessToken, undefined, 403);
@@ -55,6 +58,9 @@ try {
   await call("DELETE", `/bookings/${booking.id}`, p.accessToken, undefined, 409);
   await call("POST", `/bookings/${booking.id}/review`, p.accessToken, { rating: 5, comment: "Test only" }, 201);
   await call("POST", `/bookings/${booking.id}/review`, p.accessToken, { rating: 5 }, 409);
+  const publicReviews = await call("GET", `/nurses/${nurse.id}/reviews`);
+  assert.equal(publicReviews[0].patientId, undefined, "Public reviews must not expose patient account IDs");
+  assert.equal(publicReviews[0].bookingId, undefined);
   assert.equal((await call("GET", "/patients/me/notes", p.accessToken)).length, 1);
   assert.equal((await call("GET", "/patients/me/invoices", p.accessToken)).length, 1);
   if (!process.env["RAZORPAY_KEY_SECRET"]) {
